@@ -177,15 +177,26 @@ table.lb tr:hover td{background:var(--mist);}
 .modal{background:white;border-radius:6px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;position:relative;}
 .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);}
 .modal-close:hover{color:var(--ink);}
-.about-hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:48px;}
-.about-sec{margin-bottom:48px;}
-.about-sec h2{margin-bottom:20px;}
+.about-hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:56px;}
+.about-sec{margin-bottom:64px;}
+.about-sec h2{margin-bottom:8px;font-size:22px;}
 .about-sec p{color:var(--stone);line-height:1.8;margin-bottom:16px;}
 .about-sec code{font-family:var(--font-b);background:var(--mist);padding:2px 6px;border-radius:3px;font-size:12px;}
-.formula{background:var(--mist);border-radius:6px;padding:20px 24px;font-family:var(--font-b);font-size:13px;margin:16px 0;}
-.flow{display:flex;align-items:center;gap:0;margin:24px 0;flex-wrap:wrap;}
-.flow-box{background:var(--ink);color:white;padding:10px 20px;border-radius:4px;font-size:12px;white-space:nowrap;}
-.flow-arr{padding:0 12px;color:var(--stone);font-size:18px;}
+.about-sec-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ember);margin-bottom:8px;font-weight:600;}
+.formula{background:var(--mist);border-radius:6px;padding:16px 20px;font-family:var(--font-b);font-size:13px;margin:16px 0;border:1px solid var(--border);}
+.pipe-step{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 12px;position:relative;z-index:1;}
+.pipe-num{font-family:var(--font-b);font-size:10px;color:var(--stone);margin-bottom:8px;letter-spacing:.08em;}
+.pipe-icon{width:56px;height:56px;background:white;border:2px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.pipe-title{font-weight:700;font-size:13px;margin-bottom:6px;}
+.pipe-body{font-size:12px;color:var(--stone);line-height:1.6;}
+.mode-info-card{border:1.5px solid var(--border);border-radius:6px;padding:20px;background:white;}
+.mode-info-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.mode-info-title{font-weight:700;font-size:14px;margin-bottom:6px;}
+.mode-info-body{font-size:12px;color:var(--stone);line-height:1.6;}
+.bias-card{background:var(--mist);border-radius:6px;padding:20px;border-left:3px solid var(--ink);}
+.bias-title{font-weight:700;font-size:13px;margin-bottom:8px;}
+.bias-body{font-size:12px;color:var(--stone);line-height:1.6;}
+.pair-node{width:36px;height:36px;border-radius:50%;background:var(--ink);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-b);}
 .cat-pill{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:12px;background:var(--mist);color:var(--stone);margin:2px;}
 .toasts{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px;}
 .toast{background:var(--ink);color:white;padding:12px 20px;border-radius:4px;font-size:13px;animation:toastIn .2s;max-width:360px;}
@@ -547,27 +558,198 @@ table.lb tr:hover td{background:var(--mist);}
 
     <!-- ABOUT -->
     <div id="page-about" class="page">
+
+      <!-- Hero -->
       <div class="about-hero">
         <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;">Methodology</div>
-        <h1>How PathScore works</h1>
-        <p style="font-size:15px;color:var(--stone);max-width:560px;line-height:1.7;margin-top:16px;">A transparent, reproducible framework for comparing SVG generation quality across language models.</p>
-      </div>
-      <div class="about-sec"><h2>The pipeline</h2>
-        <div class="flow">
-          <div class="flow-box">Prompt Dataset</div><div class="flow-arr">&#8594;</div>
-          <div class="flow-box">N &#215; M Generations</div><div class="flow-arr">&#8594;</div>
-          <div class="flow-box">Pairwise Judging</div><div class="flow-arr">&#8594;</div>
-          <div class="flow-box">ELO Rankings</div>
+        <h1 style="max-width:640px;">A transparent framework for comparing SVG generation quality across LLMs</h1>
+        <div style="display:flex;gap:32px;margin-top:32px;flex-wrap:wrap;">
+          <div><div style="font-family:var(--font-h);font-weight:800;font-size:36px;line-height:1;">N×M</div><div style="font-size:12px;color:var(--stone);margin-top:4px;">parallel generations</div></div>
+          <div style="width:1px;background:var(--border);"></div>
+          <div><div style="font-family:var(--font-h);font-weight:800;font-size:36px;line-height:1;">N(N−1)/2</div><div style="font-size:12px;color:var(--stone);margin-top:4px;">unique pairs per prompt</div></div>
+          <div style="width:1px;background:var(--border);"></div>
+          <div><div style="font-family:var(--font-h);font-weight:800;font-size:36px;line-height:1;">K=32</div><div style="font-size:12px;color:var(--stone);margin-top:4px;">ELO K-factor</div></div>
+          <div style="width:1px;background:var(--border);"></div>
+          <div><div style="font-family:var(--font-h);font-weight:800;font-size:36px;line-height:1;">1000</div><div style="font-size:12px;color:var(--stone);margin-top:4px;">starting ELO score</div></div>
         </div>
-        <p>For N models and M prompts, PathScore generates N&#215;M SVGs in parallel. It then creates all N&#215;(N-1)/2 unique pairings per prompt, randomly assigning which generation appears as Model A and which as Model B to eliminate position bias.</p>
       </div>
-      <div class="about-sec"><h2>ELO rating system</h2>
-        <p>Standard ELO starting at 1000 with K=32. Comparisons are processed chronologically.</p>
-        <div class="formula">E<sub>A</sub> = 1 / (1 + 10^((R<sub>B</sub> - R<sub>A</sub>) / 400))</div>
+
+      <!-- Pipeline -->
+      <div class="about-sec">
+        <div class="about-sec-label">The pipeline</div>
+        <h2>Four stages, fully parallelized</h2>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:32px 0;position:relative;">
+          <!-- connector line -->
+          <div style="position:absolute;top:28px;left:10%;right:10%;height:2px;background:var(--border);z-index:0;"></div>
+          <div class="pipe-step">
+            <div class="pipe-num">01</div>
+            <div class="pipe-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <div class="pipe-title">Prompt Dataset</div>
+            <div class="pipe-body">M prompts defined by you, or AI-generated. Each model receives every prompt.</div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">02</div>
+            <div class="pipe-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <div class="pipe-title">SVG Generation</div>
+            <div class="pipe-body">All N×M generations fire in parallel via OpenRouter. No waiting between models.</div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">03</div>
+            <div class="pipe-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="17" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
+            </div>
+            <div class="pipe-title">Pairwise Judging</div>
+            <div class="pipe-body">A VLM judge sees both SVGs rendered as PNG. A/B positions are randomized each pair to eliminate position bias.</div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-num">04</div>
+            <div class="pipe-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <div class="pipe-title">ELO Rankings</div>
+            <div class="pipe-body">Each judgment updates both models' ratings. Win/loss/tie maps to 1/0/0.5 for the ELO formula.</div>
+          </div>
+        </div>
       </div>
-      <div class="about-sec"><h2>Benchmark modes</h2>
-        <p><strong>Standard</strong> - classic generate + pairwise judge. <strong>Feedback Iteration</strong> - models also improve based on feedback. <strong>Image to SVG</strong> - test reproduction accuracy. <strong>SVG Editing</strong> - test instruction following. <strong>Human Evaluation</strong> - you judge alongside LLMs.</p>
+
+      <!-- Pairing strategy -->
+      <div class="about-sec">
+        <div class="about-sec-label">Pairing strategy</div>
+        <h2>Every model faces every other model</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;">
+          <div>
+            <p style="color:var(--stone);line-height:1.8;">For N models and M prompts, PathScore creates all unique pairings — no round-robin shortcuts. A/B position is randomly assigned per pair to prevent the judge from favoring whichever appears first.</p>
+            <p style="color:var(--stone);line-height:1.8;">With 4 models and 5 prompts at 2 judge runs per pair, that's <strong style="color:var(--ink);">60 total comparisons</strong> — all fired in parallel.</p>
+            <div class="formula" style="margin-top:20px;">
+              comparisons = M &times; <sup>N(N−1)</sup>/<sub>2</sub> &times; R
+            </div>
+            <div style="font-size:11px;color:var(--stone);margin-top:8px;">M = prompts &nbsp;·&nbsp; N = models &nbsp;·&nbsp; R = judge runs per pair</div>
+          </div>
+          <!-- Visual pairing diagram -->
+          <div style="background:var(--mist);border-radius:6px;padding:24px;">
+            <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:20px;">4 models → 6 unique pairs</div>
+            <div style="display:flex;gap:12px;justify-content:center;margin-bottom:20px;">
+              <div class="pair-node" id="pn-a">A</div>
+              <div class="pair-node" id="pn-b">B</div>
+              <div class="pair-node" id="pn-c">C</div>
+              <div class="pair-node" id="pn-d">D</div>
+            </div>
+            <svg viewBox="0 0 220 90" style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+              <!-- nodes at x: 20,73,127,200  y:10 -->
+              <line x1="27" y1="15" x2="66" y2="15" stroke="#0a0a0a" stroke-width="1.5"/>
+              <line x1="27" y1="15" x2="120" y2="15" stroke="#0a0a0a" stroke-width="1.5"/>
+              <line x1="27" y1="15" x2="193" y2="15" stroke="#0a0a0a" stroke-width="1.5"/>
+              <line x1="73" y1="15" x2="120" y2="15" stroke="#e84d2f" stroke-width="1.5"/>
+              <line x1="73" y1="15" x2="193" y2="15" stroke="#e84d2f" stroke-width="1.5"/>
+              <line x1="127" y1="15" x2="193" y2="15" stroke="#0a0a0a" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="110" y="55" text-anchor="middle" font-size="11" fill="#888" font-family="'IBM Plex Mono',monospace">AB · AC · AD · BC · BD · CD</text>
+              <text x="110" y="75" text-anchor="middle" font-size="11" fill="#e84d2f" font-family="'IBM Plex Mono',monospace">6 pairs &nbsp;=&nbsp; 4×3 / 2</text>
+            </svg>
+          </div>
+        </div>
       </div>
+
+      <!-- ELO -->
+      <div class="about-sec">
+        <div class="about-sec-label">Rating system</div>
+        <h2>ELO: a chess rating system applied to SVG</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;">
+          <div>
+            <p style="color:var(--stone);line-height:1.8;">Every model starts at 1000. After each comparison, both models' scores update based on the expected vs actual result. Upsets move the needle more than expected wins.</p>
+            <div class="formula" style="margin-top:20px;">
+              E<sub>A</sub> = 1 / (1 + 10<sup>(R<sub>B</sub> − R<sub>A</sub>) / 400</sup>)
+            </div>
+            <div style="font-size:11px;color:var(--stone);margin-top:8px;">E<sub>A</sub> = expected score for A &nbsp;·&nbsp; K = 32</div>
+            <div class="formula" style="margin-top:12px;">
+              R'<sub>A</sub> = R<sub>A</sub> + K × (S<sub>A</sub> − E<sub>A</sub>)
+            </div>
+            <div style="font-size:11px;color:var(--stone);margin-top:8px;">S<sub>A</sub> = 1 (win) · 0.5 (tie) · 0 (loss)</div>
+          </div>
+          <!-- ELO example -->
+          <div style="background:var(--mist);border-radius:6px;padding:24px;">
+            <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;">Example: upset scenario</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Model A <span style="color:var(--stone);">underdog</span></span><span style="font-family:var(--font-b);">800 → <strong style="color:var(--ink);">822</strong></span></div>
+                <div style="height:6px;background:white;border-radius:3px;overflow:hidden;"><div style="width:82%;height:100%;background:var(--ember);border-radius:3px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Model B <span style="color:var(--stone);">favourite</span></span><span style="font-family:var(--font-b);">1200 → <strong style="color:var(--ink);">1178</strong></span></div>
+                <div style="height:6px;background:white;border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--border);border-radius:3px;"></div></div>
+              </div>
+              <div style="font-size:11px;color:var(--stone);border-top:1px solid var(--border);padding-top:12px;">A wins despite being 400 points behind. Rating swings by 22 pts. If the favourite had won, only ~10 pts would move.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modes -->
+      <div class="about-sec">
+        <div class="about-sec-label">Benchmark modes</div>
+        <h2>Five ways to test a model</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:24px;">
+          <div class="mode-info-card">
+            <div class="mode-info-icon" style="background:#0a0a0a;color:white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+            </div>
+            <div class="mode-info-title">Standard</div>
+            <div class="mode-info-body">Generate from prompt → pairwise judge. The baseline for raw SVG quality.</div>
+          </div>
+          <div class="mode-info-card">
+            <div class="mode-info-icon" style="background:#e84d2f;color:white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+            <div class="mode-info-title">Feedback Iteration</div>
+            <div class="mode-info-body">Best generation + critique → models improve. Tests refinement ability.</div>
+          </div>
+          <div class="mode-info-card">
+            <div class="mode-info-icon" style="background:#0a0a0a;color:white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div class="mode-info-title">Image to SVG</div>
+            <div class="mode-info-body">Given a reference image, reproduce it as SVG. Tests pixel-to-vector accuracy.</div>
+          </div>
+          <div class="mode-info-card">
+            <div class="mode-info-icon" style="background:#0a0a0a;color:white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="mode-info-title">SVG Editing</div>
+            <div class="mode-info-body">Given an SVG + instruction, apply the edit. Tests instruction following.</div>
+          </div>
+          <div class="mode-info-card">
+            <div class="mode-info-icon" style="background:#e84d2f;color:white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="mode-info-title">Human Evaluation</div>
+            <div class="mode-info-body">You judge alongside LLMs. Tracks agreement rate between human and AI judges.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Position bias -->
+      <div class="about-sec">
+        <div class="about-sec-label">Bias controls</div>
+        <h2>How PathScore eliminates bias</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:24px;">
+          <div class="bias-card">
+            <div class="bias-title">Position bias</div>
+            <div class="bias-body">A/B order is randomized per comparison. The same pair might appear as (X vs Y) one run and (Y vs X) the next.</div>
+          </div>
+          <div class="bias-card">
+            <div class="bias-title">Judge variance</div>
+            <div class="bias-body">Run each pair through the judge 2–5 times. Majority vote determines the outcome, smoothing single-call noise.</div>
+          </div>
+          <div class="bias-card">
+            <div class="bias-title">Prompt coverage</div>
+            <div class="bias-body">Results aggregate across all prompts. A model that excels at one category can't inflate its overall ranking.</div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </main>
