@@ -352,45 +352,66 @@ async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal, ext
   }
 }
 
-// ── Standard mode ────────────────────────────────────────────────────────────
-async function runStandard(runId, config, abortCtrl) {
-  const { models, prompts, judge } = config;
+// ── Shared: generate all + judge pairs as they become available ───────────────
+// Judging starts as soon as any 2 models finish a prompt — no waiting for all N×M
+async function runParallelGenAndJudge(runId, config, abortCtrl, genList) {
+  const { judge } = config;
+  const judgeModel = judge?.model || 'google/gemini-3-flash-preview';
+  const judgeRuns = judge?.runs || 1;
 
-  // Phase 1: Generate all SVGs in parallel
-  const genPromises = [];
-  for (const model of models) {
-    const modelId = model.id || model;
-    for (const prompt of prompts) {
-      genPromises.push(generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal));
-    }
-  }
-  await Promise.allSettled(genPromises);
-
-  if (abortCtrl.signal.aborted) return 'stopped';
-
-  // Phase 2: Pairwise judgments
-  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
-  const byPrompt = {};
-  for (const g of gens) {
-    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
-    byPrompt[g.prompt_id].push(g);
-  }
-
+  // completedByPrompt[promptId] = array of complete generation rows
+  const completedByPrompt = {};
+  // track which pairs have been launched: sorted(genAId,genBId) joined
+  const launchedPairs = new Set();
   const cmpPromises = [];
-  for (const [, pg] of Object.entries(byPrompt)) {
-    for (let i = 0; i < pg.length; i++) {
-      for (let j = i + 1; j < pg.length; j++) {
-        const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
-        const judgeRuns = judge?.runs || 1;
+
+  function launchNewPairs(promptId) {
+    const done = completedByPrompt[promptId];
+    if (!done || done.length < 2) return;
+    for (let i = 0; i < done.length; i++) {
+      for (let j = i + 1; j < done.length; j++) {
+        const key = [done[i].id, done[j].id].sort().join('|||');
+        if (launchedPairs.has(key)) continue;
+        launchedPairs.add(key);
+        const [ga, gb] = Math.random() < 0.5 ? [done[i], done[j]] : [done[j], done[i]];
         for (let r = 1; r <= judgeRuns; r++) {
-          cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', r, abortCtrl.signal));
+          cmpPromises.push(judgeOnePair(runId, ga, gb, judgeModel, r, abortCtrl.signal));
         }
       }
     }
   }
+
+  // Wrap each generation so we can trigger judging the moment it lands
+  const genPromises = genList.map(({ modelId, prompt, reasoningEffort, extraMessages }) =>
+    generateOneSVG(runId, modelId, prompt, config, reasoningEffort || null, abortCtrl.signal, extraMessages)
+      .then(genId => {
+        if (!genId || abortCtrl.signal.aborted) return;
+        const gen = db.prepare(`SELECT * FROM generations WHERE id=?`).get(genId);
+        if (!gen || gen.status !== 'complete') return;
+        if (!completedByPrompt[prompt.id]) completedByPrompt[prompt.id] = [];
+        completedByPrompt[prompt.id].push(gen);
+        launchNewPairs(prompt.id);
+      })
+  );
+
+  await Promise.allSettled(genPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  // Wait for any judge calls already launched (including late-starters from slow gens)
   await Promise.allSettled(cmpPromises);
   if (abortCtrl.signal.aborted) return 'stopped';
   return 'complete';
+}
+
+// ── Standard mode ────────────────────────────────────────────────────────────
+async function runStandard(runId, config, abortCtrl) {
+  const { models, prompts } = config;
+  const genList = [];
+  for (const model of models) {
+    for (const prompt of prompts) {
+      genList.push({ modelId: model.id || model, prompt, reasoningEffort: model.reasoning_effort });
+    }
+  }
+  return runParallelGenAndJudge(runId, config, abortCtrl, genList);
 }
 
 // ── Feedback Iteration mode ──────────────────────────────────────────────────
@@ -545,24 +566,28 @@ async function runFeedbackIteration(runId, config, abortCtrl) {
 async function runImageToSVG(runId, config, abortCtrl) {
   const { models, prompts, judge } = config;
 
-  // Phase 1: Generate SVGs from reference images
-  const genPromises = [];
+  // Phase 1: Generate SVGs from reference images (with rolling judging)
+  const genList = [];
   for (const model of models) {
-    const modelId = model.id || model;
     for (const prompt of prompts) {
-      genPromises.push((async () => {
-        const messages = [
+      genList.push({
+        modelId: model.id || model,
+        prompt,
+        reasoningEffort: model.reasoning_effort,
+        extraMessages: [
           { role: 'system', content: 'You are an expert SVG artist. Reproduce the given reference image as an SVG. Respond with ONLY the SVG code.' },
           { role: 'user', content: [
             { type: 'text', text: `Reproduce this image as SVG as accurately as possible. Use viewBox="0 0 400 400". Output ONLY the <svg> element.${prompt.text ? '\n\nAdditional context: ' + prompt.text : ''}` },
             ...(prompt.reference_image ? [{ type: 'image_url', image_url: { url: prompt.reference_image } }] : []),
           ]},
-        ];
-        return generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal, messages);
-      })());
+        ],
+      });
     }
   }
-  await Promise.allSettled(genPromises);
+  // Start standard judging rolling alongside generations
+  const genResult = await runParallelGenAndJudge(runId, config, abortCtrl, genList);
+  if (genResult !== 'complete') return genResult;
+  // Also run image-specific judge pass with reference image context
   if (abortCtrl.signal.aborted) return 'stopped';
 
   // Phase 2: Judge pairs with reference image context
@@ -636,30 +661,29 @@ async function runImageToSVG(runId, config, abortCtrl) {
 async function runSVGEditing(runId, config, abortCtrl) {
   const { models, prompts, judge } = config;
 
-  const genPromises = [];
+  const genList = [];
   for (const model of models) {
-    const modelId = model.id || model;
     for (const prompt of prompts) {
-      genPromises.push((async () => {
-        const messages = [
+      genList.push({
+        modelId: model.id || model,
+        prompt,
+        reasoningEffort: model.reasoning_effort,
+        extraMessages: [
           { role: 'system', content: 'You are an expert SVG editor. Apply the requested edit to the SVG code. Respond with ONLY the complete edited SVG.' },
           { role: 'user', content: `Edit this SVG according to the instruction:\n\nInstruction: ${prompt.edit_instruction || prompt.text}\n\nOriginal SVG:\n${prompt.source_svg || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"></svg>'}\n\nOutput ONLY the edited <svg> element.` },
-        ];
-        return generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal, messages);
-      })());
+        ],
+      });
     }
   }
-  await Promise.allSettled(genPromises);
-  if (abortCtrl.signal.aborted) return 'stopped';
-
-  // Judge standard pairs
-  const result = await runStandardJudging(runId, config, abortCtrl);
-  return result;
+  return runParallelGenAndJudge(runId, config, abortCtrl, genList);
 }
 
 async function runStandardJudging(runId, config, abortCtrl) {
-  const { judge } = config;
+  // For modes where generations already exist — just judge them (already-complete gens)
   const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const { judge } = config;
+  const judgeModel = judge?.model || 'google/gemini-3-flash-preview';
+  const judgeRuns = judge?.runs || 1;
   const byPrompt = {};
   for (const g of gens) {
     if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
@@ -670,9 +694,8 @@ async function runStandardJudging(runId, config, abortCtrl) {
     for (let i = 0; i < pg.length; i++) {
       for (let j = i + 1; j < pg.length; j++) {
         const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
-        const judgeRuns = judge?.runs || 1;
         for (let r = 1; r <= judgeRuns; r++) {
-          cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', r, abortCtrl.signal));
+          cmpPromises.push(judgeOnePair(runId, ga, gb, judgeModel, r, abortCtrl.signal));
         }
       }
     }
@@ -687,18 +710,20 @@ async function runHumanEval(runId, config, abortCtrl) {
   const { models, prompts, judge } = config;
   const runLLMJudge = config.human_eval_llm_judge !== false;
 
-  // Phase 1: Generate SVGs
-  const genPromises = [];
-  for (const model of models) {
-    const modelId = model.id || model;
-    for (const prompt of prompts) {
-      genPromises.push(generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal));
-    }
+  // Phase 1: Generate SVGs (with rolling LLM judge if enabled)
+  const genList = models.flatMap(model =>
+    prompts.map(prompt => ({ modelId: model.id || model, prompt, reasoningEffort: model.reasoning_effort }))
+  );
+  if (runLLMJudge) {
+    await runParallelGenAndJudge(runId, config, abortCtrl, genList);
+  } else {
+    await Promise.allSettled(genList.map(({ modelId, prompt, reasoningEffort }) =>
+      generateOneSVG(runId, modelId, prompt, config, reasoningEffort || null, abortCtrl.signal)
+    ));
   }
-  await Promise.allSettled(genPromises);
   if (abortCtrl.signal.aborted) return 'stopped';
 
-  // Phase 2: Create comparison records (pending human review), optionally also run LLM judge
+  // Phase 2: Create comparison records (pending human review)
   const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
   const byPrompt = {};
   for (const g of gens) {
@@ -780,6 +805,38 @@ app.get('/api/models', async (req, res) => {
     let filtered = all.filter(m => !q || m.id.toLowerCase().includes(q) || (m.name || '').toLowerCase().includes(q));
     const total = filtered.length;
     res.json({ models: filtered.slice(offset, offset + limit), total, offset, limit });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Landing page data: global stats + latest complete run leaderboard + sample SVGs
+app.get('/api/landing', (req, res) => {
+  try {
+    const totalRuns = db.prepare(`SELECT count(*) as n FROM runs WHERE status='complete'`).get().n;
+    const totalGens = db.prepare(`SELECT count(*) as n FROM generations WHERE status='complete'`).get().n;
+    const totalCmps = db.prepare(`SELECT count(*) as n FROM comparisons WHERE status='complete'`).get().n;
+    const totalModels = db.prepare(`SELECT count(DISTINCT model_id) as n FROM generations WHERE status='complete'`).get().n;
+
+    // Latest complete run
+    const latestRun = db.prepare(`SELECT * FROM runs WHERE status='complete' ORDER BY completed_at DESC LIMIT 1`).get();
+    let leaderboard = [], sampleSVGs = [];
+    if (latestRun) {
+      const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(latestRun.id);
+      const cmps = db.prepare(`SELECT * FROM comparisons WHERE run_id=? AND status='complete'`).all(latestRun.id);
+      const elo = calcELO(cmps, [...new Set(gens.map(g => g.model_id))]);
+      leaderboard = Object.entries(elo).map(([model, rating]) => ({ model, rating: Math.round(rating) }))
+        .sort((a, b) => b.rating - a.rating);
+
+      // Sample SVGs: one per model (highest-scoring generation)
+      const byModel = {};
+      for (const g of gens) {
+        if (!byModel[g.model_id]) byModel[g.model_id] = g;
+      }
+      sampleSVGs = Object.values(byModel).slice(0, 8).map(g => ({
+        id: g.id, model_id: g.model_id, prompt_text: g.prompt_text
+      }));
+    }
+
+    res.json({ totalRuns, totalGens, totalCmps, totalModels, latestRun: latestRun ? { id: latestRun.id, name: latestRun.name } : null, leaderboard, sampleSVGs });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

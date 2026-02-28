@@ -240,38 +240,216 @@ table.lb tr:hover td{background:var(--mist);}
 .iter-cmp-slot{padding:12px;border-right:1px solid var(--border);}
 .iter-cmp-slot:last-child{border-right:none;}
 .both-bad-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;background:#fff0f0;color:var(--ember);border:1px solid var(--ember);}
-@media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}.mode-cards{grid-template-columns:1fr;}}
+/* Landing */
+.landing-hero{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;padding:64px 0 80px;border-bottom:1.5px solid var(--border);margin-bottom:72px;}
+.landing-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);font-weight:600;margin-bottom:20px;}
+.landing-h1{font-size:clamp(36px,5vw,60px);line-height:1.05;font-weight:800;margin-bottom:20px;}
+.landing-sub{font-size:15px;color:var(--stone);line-height:1.75;max-width:420px;}
+.landing-hero-right{display:flex;flex-direction:column;align-items:center;gap:32px;}
+.landing-crosshair{width:220px;height:220px;flex-shrink:0;}
+.landing-stat-chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+.stat-chip{background:var(--mist);border:1.5px solid var(--border);border-radius:6px;padding:14px 16px;}
+.stat-chip-n{display:block;font-family:var(--font-h);font-weight:800;font-size:26px;line-height:1;margin-bottom:4px;}
+.stat-chip-l{font-size:11px;color:var(--stone);}
+.landing-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+.landing-step{display:flex;flex-direction:column;gap:12px;}
+.landing-step-n{font-family:var(--font-b);font-size:11px;color:var(--ember);letter-spacing:.08em;}
+.landing-step-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.landing-step-body{font-size:12px;color:var(--stone);line-height:1.7;}
+.landing-features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.landing-feature{border:1.5px solid var(--border);border-radius:6px;padding:24px;background:white;}
+.landing-feature-icon{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.lf-black{background:var(--ink);color:white;}
+.lf-ember{background:var(--ember);color:white;}
+.landing-feature-title{font-weight:700;font-size:14px;margin-bottom:6px;}
+.landing-feature-body{font-size:12px;color:var(--stone);line-height:1.65;}
+.landing-svg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.landing-lb-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.landing-lb-rank{font-family:var(--font-b);font-size:11px;color:var(--stone);width:24px;flex-shrink:0;}
+.landing-lb-model{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.landing-lb-elo{font-family:var(--font-b);font-size:13px;font-weight:700;}
+.landing-lb-bar{flex:0 0 120px;height:4px;background:var(--mist);border-radius:2px;overflow:hidden;}
+.landing-lb-fill{height:100%;background:var(--ink);border-radius:2px;}
+@media(max-width:900px){.landing-hero{grid-template-columns:1fr;gap:40px;}.landing-steps{grid-template-columns:1fr 1fr;}.landing-features{grid-template-columns:1fr 1fr;}}
+@media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}.mode-cards{grid-template-columns:1fr;}.landing-hero{grid-template-columns:1fr;}.landing-steps{grid-template-columns:1fr 1fr;}.landing-features{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="app">
   <nav class="nav">
-    <div class="nav-logo" onclick="showPage('home')">
-      <span style="font-size:18px;">&#9678;</span>
+    <div class="nav-logo" onclick="showPage('landing')">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="10" stroke="#e84d2f" stroke-width="1.5"/>
+        <circle cx="11" cy="11" r="5.5" stroke="#e84d2f" stroke-width="1.5"/>
+        <circle cx="11" cy="11" r="1.5" fill="#e84d2f"/>
+        <line x1="11" y1="1" x2="11" y2="4.5" stroke="#e84d2f" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="11" y1="17.5" x2="11" y2="21" stroke="#e84d2f" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="1" y1="11" x2="4.5" y2="11" stroke="#e84d2f" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="17.5" y1="11" x2="21" y2="11" stroke="#e84d2f" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
       <span class="nav-logo-text">PathScore</span>
       <span class="nav-dot"></span>
     </div>
     <div class="nav-links">
+      <span class="nav-link" data-page="landing" onclick="showPage('landing')">Home</span>
       <span class="nav-link active" data-page="home" onclick="showPage('home')">Benchmarks</span>
       <span class="nav-link" data-page="about" onclick="showPage('about')">Methodology</span>
     </div>
   </nav>
   <main class="main">
 
-    <!-- HOME -->
-    <div id="page-home" class="page active">
-      <div class="hero">
-        <div class="hero-eyebrow">SVG Generation Benchmark</div>
-        <h1>Measure what <span class="ember">models</span><br>can actually draw.</h1>
-        <p class="hero-sub">PathScore runs any set of OpenRouter models against a prompt dataset, uses a VLM judge to compare outputs pairwise, and produces ELO rankings you can trust.</p>
-        <div style="display:flex;gap:12px;align-items:center;">
-          <button class="btn btn-accent" onclick="startNewBenchmark()">+ New Benchmark</button>
-          <label class="btn btn-outline" style="cursor:pointer">Import Results<input type="file" accept=".json" style="display:none" onchange="importResults(event)"></label>
+    <!-- LANDING -->
+    <div id="page-landing" class="page active">
+      <!-- Hero -->
+      <div class="landing-hero">
+        <div class="landing-hero-left">
+          <div class="landing-eyebrow">SVG Generation Benchmark</div>
+          <h1 class="landing-h1">Measure what<br>models can<br><span class="ember">actually draw.</span></h1>
+          <p class="landing-sub">PathScore runs any set of OpenRouter LLMs against a prompt dataset. A VLM judge compares outputs pairwise. ELO rankings tell you who actually wins.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px;">
+            <button class="btn btn-accent" style="font-size:14px;padding:12px 24px;" onclick="startNewBenchmark()">+ New Benchmark</button>
+            <button class="btn btn-outline" style="font-size:14px;padding:12px 24px;" onclick="showPage('home')">View Benchmarks</button>
+          </div>
+        </div>
+        <div class="landing-hero-right">
+          <div class="landing-crosshair">
+            <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+              <circle cx="160" cy="160" r="140" stroke="#e84d2f" stroke-width="1" fill="none" opacity="0.15"/>
+              <circle cx="160" cy="160" r="100" stroke="#e84d2f" stroke-width="1" fill="none" opacity="0.25"/>
+              <circle cx="160" cy="160" r="60" stroke="#e84d2f" stroke-width="1.5" fill="none" opacity="0.5"/>
+              <circle cx="160" cy="160" r="20" stroke="#e84d2f" stroke-width="2" fill="none"/>
+              <circle cx="160" cy="160" r="5" fill="#e84d2f"/>
+              <line x1="160" y1="0" x2="160" y2="130" stroke="#e84d2f" stroke-width="1.5" opacity="0.6"/>
+              <line x1="160" y1="190" x2="160" y2="320" stroke="#e84d2f" stroke-width="1.5" opacity="0.6"/>
+              <line x1="0" y1="160" x2="130" y2="160" stroke="#e84d2f" stroke-width="1.5" opacity="0.6"/>
+              <line x1="190" y1="160" x2="320" y2="160" stroke="#e84d2f" stroke-width="1.5" opacity="0.6"/>
+              <!-- tick marks -->
+              <line x1="155" y1="20" x2="165" y2="20" stroke="#e84d2f" stroke-width="1" opacity="0.4"/>
+              <line x1="155" y1="300" x2="165" y2="300" stroke="#e84d2f" stroke-width="1" opacity="0.4"/>
+              <line x1="20" y1="155" x2="20" y2="165" stroke="#e84d2f" stroke-width="1" opacity="0.4"/>
+              <line x1="300" y1="155" x2="300" y2="165" stroke="#e84d2f" stroke-width="1" opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="landing-stat-chips" id="landing-stats">
+            <div class="stat-chip"><span class="stat-chip-n" id="stat-gens">—</span><span class="stat-chip-l">SVGs generated</span></div>
+            <div class="stat-chip"><span class="stat-chip-n" id="stat-cmps">—</span><span class="stat-chip-l">Comparisons run</span></div>
+            <div class="stat-chip"><span class="stat-chip-n" id="stat-models">—</span><span class="stat-chip-l">Models tested</span></div>
+            <div class="stat-chip"><span class="stat-chip-n" id="stat-runs">—</span><span class="stat-chip-l">Benchmarks complete</span></div>
+          </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+
+      <!-- Latest leaderboard -->
+      <div id="landing-leaderboard-wrap" style="display:none;margin-bottom:64px;">
+        <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:24px;">
+          <h2>Latest Results</h2>
+          <span id="landing-run-name" style="font-size:13px;color:var(--stone);"></span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto;" id="landing-view-btn" onclick="">Full Results →</button>
+        </div>
+        <div id="landing-leaderboard"></div>
+      </div>
+
+      <!-- Sample SVG grid -->
+      <div id="landing-svgs-wrap" style="display:none;margin-bottom:64px;">
+        <h2 style="margin-bottom:24px;">Sample Outputs</h2>
+        <div class="landing-svg-grid" id="landing-svg-grid"></div>
+      </div>
+
+      <!-- How it works -->
+      <div style="margin-bottom:64px;">
+        <h2 style="margin-bottom:32px;">How it works</h2>
+        <div class="landing-steps">
+          <div class="landing-step">
+            <div class="landing-step-n">01</div>
+            <div>
+              <div class="landing-step-title">Configure</div>
+              <div class="landing-step-body">Pick models from 400+ on OpenRouter. Write prompts or generate them with AI. Choose a VLM judge and reasoning effort per model.</div>
+            </div>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-n">02</div>
+            <div>
+              <div class="landing-step-title">Run</div>
+              <div class="landing-step-body">All N×M generations fire in parallel. Judging begins the moment any two models complete a prompt — no waiting for stragglers.</div>
+            </div>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-n">03</div>
+            <div>
+              <div class="landing-step-title">Judge</div>
+              <div class="landing-step-body">A/B positions randomized each pair to eliminate position bias. Run 1–5 judge passes per pair to reduce noise.</div>
+            </div>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-n">04</div>
+            <div>
+              <div class="landing-step-title">Results</div>
+              <div class="landing-step-body">ELO leaderboard, win-rate heatmap, and searchable comparison browser. Export as JSON, HTML, or PDF.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature grid -->
+      <div style="margin-bottom:64px;">
+        <h2 style="margin-bottom:24px;">What you can test</h2>
+        <div class="landing-features">
+          <div class="landing-feature">
+            <div class="landing-feature-icon lf-black">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+            </div>
+            <div class="landing-feature-title">Standard benchmark</div>
+            <div class="landing-feature-body">Generate from prompt, judge pairwise. The baseline for raw SVG quality across any set of models.</div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon lf-ember">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+            <div class="landing-feature-title">Feedback iteration</div>
+            <div class="landing-feature-body">Winner + critique goes back to models for a second pass. Tests whether models can actually improve on feedback.</div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon lf-black">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div class="landing-feature-title">Image to SVG</div>
+            <div class="landing-feature-body">Give models a reference image and ask them to reproduce it in SVG. Tests pixel-to-vector fidelity.</div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon lf-black">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="landing-feature-title">SVG editing</div>
+            <div class="landing-feature-body">Provide an SVG and an edit instruction. Who applies it most accurately? Tests instruction following.</div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon lf-ember">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="landing-feature-title">Human evaluation</div>
+            <div class="landing-feature-body">You judge alongside LLMs. Tracks human-AI agreement rate and surfaces disagreements.</div>
+          </div>
+          <div class="landing-feature" style="background:var(--ink);border-color:var(--ink);">
+            <div style="color:white;">
+              <div style="font-family:var(--font-h);font-weight:800;font-size:22px;margin-bottom:8px;">400+</div>
+              <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);margin-bottom:6px;">models available</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.5);">Any model on OpenRouter — set reasoning effort per model instance.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- HOME (Benchmarks list) -->
+    <div id="page-home" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-top:8px;">
         <h2>Your Benchmarks</h2>
-        <span id="runs-count" class="stone" style="font-size:12px;"></span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span id="runs-count" class="stone" style="font-size:12px;"></span>
+          <button class="btn btn-accent btn-sm" onclick="startNewBenchmark()">+ New</button>
+          <label class="btn btn-outline btn-sm" style="cursor:pointer">Import<input type="file" accept=".json" style="display:none" onchange="importResults(event)"></label>
+        </div>
       </div>
       <div id="runs-list" class="run-list"></div>
     </div>
@@ -813,8 +991,47 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page===name));
+  if (name==='landing') loadLanding();
   if (name==='home') loadRuns();
   if (name==='human-judge') loadHumanJudge();
+}
+
+async function loadLanding() {
+  try {
+    const d = await fetch('/api/landing').then(r => r.json());
+    document.getElementById('stat-gens').textContent = d.totalGens.toLocaleString();
+    document.getElementById('stat-cmps').textContent = d.totalCmps.toLocaleString();
+    document.getElementById('stat-models').textContent = d.totalModels.toLocaleString();
+    document.getElementById('stat-runs').textContent = d.totalRuns.toLocaleString();
+
+    if (d.leaderboard && d.leaderboard.length) {
+      document.getElementById('landing-leaderboard-wrap').style.display = 'block';
+      document.getElementById('landing-run-name').textContent = d.latestRun?.name || '';
+      const btn = document.getElementById('landing-view-btn');
+      if (d.latestRun) btn.onclick = () => viewResults(d.latestRun.id);
+      const maxElo = d.leaderboard[0].rating;
+      const minElo = d.leaderboard[d.leaderboard.length-1].rating;
+      document.getElementById('landing-leaderboard').innerHTML = d.leaderboard.map((r,i) => {
+        const pct = maxElo===minElo ? 100 : Math.round((r.rating-minElo)/(maxElo-minElo)*80+20);
+        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+        return '<div class="landing-lb-row">'+
+          '<div class="landing-lb-rank">'+(i+1)+'</div>'+
+          '<div class="landing-lb-model" title="'+esc(r.model)+'">'+esc(r.model.split('/').pop())+' '+medal+'</div>'+
+          '<div class="landing-lb-bar"><div class="landing-lb-fill" style="width:'+pct+'%"></div></div>'+
+          '<div class="landing-lb-elo">'+r.rating+'</div></div>';
+      }).join('');
+    }
+
+    if (d.sampleSVGs && d.sampleSVGs.length) {
+      document.getElementById('landing-svgs-wrap').style.display = 'block';
+      document.getElementById('landing-svg-grid').innerHTML = d.sampleSVGs.map(g =>
+        '<div class="svg-thumb" onclick="showSVGModal(\''+esc(g.id)+'\',\''+esc(g.model_id)+'\',\''+esc(g.prompt_text)+'\')">'+
+        '<div class="svg-thumb-img"><img src="/api/generations/'+esc(g.id)+'/svg" loading="lazy" alt=""></div>'+
+        '<div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(g.model_id.split('/').pop())+'</div>'+
+        '<div class="svg-thumb-prompt">'+esc(trunc(g.prompt_text,40))+'</div></div></div>'
+      ).join('');
+    }
+  } catch(e) { /* stats not critical */ }
 }
 
 // HOME
@@ -1642,7 +1859,7 @@ function switchTab(name, el) {
 }
 
 // Init
-loadRuns();
+loadLanding();
 </script>
 </body>
 </html>
