@@ -647,10 +647,10 @@ async function loadRuns() {
     const genInfo = r.genTotal ? r.genDone+'/'+r.genTotal+' SVGs' : '';
     const cmpInfo = r.cmpTotal ? r.cmpDone+'/'+r.cmpTotal+' cmps' : '';
     const modeTag = r.mode && r.mode!=='standard' ? '<span style="font-size:10px;background:var(--mist);padding:2px 8px;border-radius:10px;margin-left:8px;">'+esc(r.mode.replace('_',' '))+'</span>' : '';
-    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(''+r.id+'')">Results</button>' : '') +
-      (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(''+r.id+'')">Run</button>' : '') +
-      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(''+r.id+'',this)">&#10005;</button>';
-    return '<div class="run-card" onclick="openRun(''+r.id+'',''+r.status+'')">'+
+    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(\''+r.id+'\')">Results</button>' : '') +
+      (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(\''+r.id+'\')">Run</button>' : '') +
+      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(\''+r.id+'\',this)">&#10005;</button>';
+    return '<div class="run-card" onclick="openRun(\''+r.id+'\',\''+r.status+'\')">'+
       '<div><div class="run-card-name">'+esc(r.name)+modeTag+'</div>'+
       '<div class="run-card-meta"><span>'+date+'</span>'+(genInfo?'<span>'+genInfo+'</span>':'')+(cmpInfo?'<span>'+cmpInfo+'</span>':'')+'</div></div>'+
       '<div class="run-progress-col"><div class="run-progress-label"><span class="s-'+r.status+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+r.status+'</span><span>'+pct+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+pct+'%"></div></div></div>'+
@@ -819,7 +819,7 @@ function renderModelOpts(models, hasMore) {
     return { m, meta };
   });
   document.getElementById('model-options').innerHTML = modelsWithMeta.map(({m,meta}) =>
-    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(''+esc(m.id)+'')">'+
+    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(\''+esc(m.id)+'\')">'+
     '<div><div class="model-option-id">'+esc(m.id)+'</div>'+(m.name&&m.name!==m.id?'<div style="font-size:10px;color:var(--stone);">'+esc(trunc(m.name,40))+'</div>':'')+
     '</div><div class="model-option-meta">'+esc(meta)+'</div></div>'
   ).join('');
@@ -865,7 +865,7 @@ function showIterModelDD() {
 function renderIterModelOpts(models) {
   const selIds = allIterModels.map(m => m.id||m);
   document.getElementById('iter-model-options').innerHTML = models.map(m =>
-    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleIterModel(''+esc(m.id)+'')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
+    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleIterModel(\''+esc(m.id)+'\')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
   ).join('');
 }
 function toggleIterModel(id) {
@@ -890,7 +890,7 @@ async function searchJudge(q) {
   const res = await fetch('/api/models?q='+encodeURIComponent(q)+'&limit=20&offset=0');
   const d = await res.json();
   document.getElementById('judge-options').innerHTML = d.models.map(m =>
-    '<div class="model-option" onclick="selectJudge(''+esc(m.id)+'')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
+    '<div class="model-option" onclick="selectJudge(\''+esc(m.id)+'\')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
   ).join('');
 }
 function showJudgeDD() {
@@ -1218,8 +1218,8 @@ function renderCmpPage() {
       '<div class="cmp-card-hdr"><span class="cmp-prompt">"'+esc(trunc(c.prompt_text,50))+'"</span>'+wb+'</div>'+
       '<div class="cmp-images" style="grid-template-columns:'+(refImg?'1fr 1fr 1fr':'1fr 1fr')+'">'+
       refImg+
-      '<div class="cmp-img-slot"><div class="label">Model A '+(c.winner==='A'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(''+safeA+'',''+esc(c.model_a_id)+'',''+esc(c.prompt_text)+'')"><img src="/api/generations/'+safeA+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_a_id))+'</div></div>'+
-      '<div class="cmp-img-slot"><div class="label">Model B '+(c.winner==='B'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(''+safeB+'',''+esc(c.model_b_id)+'',''+esc(c.prompt_text)+'')"><img src="/api/generations/'+safeB+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_b_id))+'</div></div>'+
+      '<div class="cmp-img-slot"><div class="label">Model A '+(c.winner==='A'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeA+'\',\''+esc(c.model_a_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeA+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_a_id))+'</div></div>'+
+      '<div class="cmp-img-slot"><div class="label">Model B '+(c.winner==='B'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeB+'\',\''+esc(c.model_b_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeB+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_b_id))+'</div></div>'+
       '</div>'+(c.thought_process?'<div class="cmp-card-ftr">'+esc(trunc(c.thought_process,120))+'</div>':'')+
       '</div>';
   }).join('');
@@ -1296,7 +1296,7 @@ function renderOutputs() {
   const mf=document.getElementById('out-mf').value, pf=document.getElementById('out-pf').value;
   const gens=resultsData.generations.filter(g => g.status==='complete' && (!mf||g.model_id===mf) && (!pf||g.prompt_text===pf));
   document.getElementById('out-grid').innerHTML=gens.map(g =>
-    '<div class="svg-thumb" onclick="showSVGModal(''+esc(g.id)+'',''+esc(g.model_id)+'',''+esc(g.prompt_text)+'')">'+
+    '<div class="svg-thumb" onclick="showSVGModal(\''+esc(g.id)+'\',\''+esc(g.model_id)+'\',\''+esc(g.prompt_text)+'\')">'+
     '<div class="svg-thumb-img"><img src="/api/generations/'+esc(g.id)+'/svg" loading="lazy" alt=""></div>'+
     '<div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(g.model_id))+'</div><div class="svg-thumb-prompt">'+esc(trunc(g.prompt_text,40))+'</div></div></div>'
   ).join('');
@@ -1314,7 +1314,7 @@ function renderHumanJudge() {
   const total = humanPending.length;
   document.getElementById('human-progress').textContent = humanIdx+' of '+total+' judged';
   if (humanIdx >= total) {
-    document.getElementById('human-judge-container').innerHTML = '<div class="empty-state"><h3>All comparisons judged</h3><p>'+total+' comparisons reviewed.</p><button class="btn btn-primary" onclick="showPage('results')">Back to Results</button></div>';
+    document.getElementById('human-judge-container').innerHTML = '<div class="empty-state"><h3>All comparisons judged</h3><p>'+total+' comparisons reviewed.</p><button class="btn btn-primary" onclick="showPage(\'results\')">Back to Results</button></div>';
     return;
   }
   const cmp = humanPending[humanIdx];
@@ -1330,9 +1330,9 @@ function renderHumanJudge() {
     '<div class="human-cmp-footer">'+
     '<div class="field"><label class="label">Feedback (optional)</label><input type="text" id="human-feedback" placeholder="What could be improved?"></div>'+
     '<div class="vote-btns">'+
-    '<button class="vote-btn vote-a" onclick="submitHumanVote(''+esc(cmp.id)+'','A')">A is Better</button>'+
-    '<button class="vote-btn vote-b" onclick="submitHumanVote(''+esc(cmp.id)+'','B')">B is Better</button>'+
-    '<button class="vote-btn vote-bb" onclick="submitHumanVote(''+esc(cmp.id)+'','tie')">Tie / Skip</button>'+
+    '<button class="vote-btn vote-a" onclick="submitHumanVote(\''+esc(cmp.id)+'\',\'A\')">A is Better</button>'+
+    '<button class="vote-btn vote-b" onclick="submitHumanVote(\''+esc(cmp.id)+'\',\'B\')">B is Better</button>'+
+    '<button class="vote-btn vote-bb" onclick="submitHumanVote(\''+esc(cmp.id)+'\',\'tie\')">Tie / Skip</button>'+
     '</div></div></div>';
 
   document.getElementById('score-a').oninput = function() { document.getElementById('score-a-v').textContent=this.value; };
