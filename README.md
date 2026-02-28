@@ -4,6 +4,8 @@
 
 Compare any set of models on SVG generation quality using pairwise VLM judging and ELO rankings.
 
+https://github.com/adamholter/pathscore/raw/main/demo.mp4
+
 ## How it works
 
 1. **Configure** — Select models, define prompts, pick a judge model
