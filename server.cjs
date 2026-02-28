@@ -94,6 +94,20 @@ db.exec(`CREATE TABLE IF NOT EXISTS extensions (
   updated_at INTEGER NOT NULL
 )`);
 
+db.exec(`CREATE TABLE IF NOT EXISTS judge_eval_tasks (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  gen_a_id TEXT NOT NULL,
+  gen_b_id TEXT NOT NULL,
+  prompt_id TEXT,
+  prompt_text TEXT,
+  verdicts TEXT NOT NULL,
+  human_winner TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at INTEGER,
+  completed_at INTEGER
+)`);
+
 // Add human_winner/human_feedback columns to comparisons (migration)
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_winner TEXT'); } catch(e) {}
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_feedback TEXT'); } catch(e) {}
@@ -927,6 +941,7 @@ app.put('/api/runs/:id', (req, res) => {
 });
 
 app.delete('/api/runs/:id', (req, res) => {
+  db.prepare(`DELETE FROM judge_eval_tasks WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM iteration_comparisons WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM iterations WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM comparisons WHERE run_id=?`).run(req.params.id);
@@ -940,6 +955,7 @@ app.post('/api/runs/:id/start', async (req, res) => {
   if (!run) return res.status(404).json({ error: 'not found' });
   if (run.status === 'running') return res.status(400).json({ error: 'Already running' });
   if (['complete', 'error', 'stopped'].includes(run.status)) {
+    db.prepare(`DELETE FROM judge_eval_tasks WHERE run_id=?`).run(req.params.id);
     db.prepare(`DELETE FROM iteration_comparisons WHERE run_id=?`).run(req.params.id);
     db.prepare(`DELETE FROM iterations WHERE run_id=?`).run(req.params.id);
     db.prepare(`DELETE FROM comparisons WHERE run_id=?`).run(req.params.id);
@@ -1165,6 +1181,65 @@ function rebuildExtensionRegistry() {
   }
 }
 
+const JUDGE_EVAL_FN_BODY = `return async function(runId, config, helpers) {
+  var db=helpers.db, uuidv4=helpers.uuidv4, emit=helpers.emit;
+  var orFetch=helpers.orFetch, svgToPng=helpers.svgToPngDataUrl;
+  var generateOneSVG=helpers.generateOneSVG;
+  var judges=config.judges||['google/gemini-2.5-flash','openai/gpt-4o-mini'];
+  emit(runId,'phase_start',{phase:1,label:'Generating SVGs from base models'});
+  var genList=(config.models||[]).reduce(function(acc,m){
+    (config.prompts||[]).forEach(function(p){ acc.push({modelId:m.id||m,prompt:p,reasoningEffort:m.reasoning_effort||null}); });
+    return acc;
+  },[]);
+  await Promise.allSettled(genList.map(function(g){
+    return generateOneSVG(runId,g.modelId,g.prompt,config,g.reasoningEffort,helpers.abortCtrl.signal);
+  }));
+  if(helpers.abortCtrl.signal.aborted) return 'stopped';
+  emit(runId,'phase_start',{phase:2,label:'Collecting judge verdicts (all judges on every pair)'});
+  var gens=db.prepare("SELECT * FROM generations WHERE run_id=? AND status='complete'").all(runId);
+  var byPrompt={};
+  for(var g of gens){ if(!byPrompt[g.prompt_id]) byPrompt[g.prompt_id]=[]; byPrompt[g.prompt_id].push(g); }
+  var taskPromises=[];
+  for(var pg of Object.values(byPrompt)){
+    for(var i=0;i<pg.length;i++){
+      for(var j=i+1;j<pg.length;j++){
+        (function(ga0,gb0){
+          var pair=Math.random()<0.5?[ga0,gb0]:[gb0,ga0];
+          var ga=pair[0],gb=pair[1];
+          if(!ga.svg_content||!gb.svg_content) return;
+          taskPromises.push((async function(ga,gb){
+            var pngA=svgToPng(ga.svg_content),pngB=svgToPng(gb.svg_content);
+            var verdicts=[];
+            await Promise.all(judges.map(async function(jm){
+              try{
+                var r=await orFetch('/chat/completions',{model:jm,messages:[{role:'user',content:[
+                  {type:'text',text:'Evaluate two SVGs for prompt: "'+ga.prompt_text+'". SVG A:'},
+                  {type:'image_url',image_url:{url:pngA}},
+                  {type:'text',text:'SVG B:'},
+                  {type:'image_url',image_url:{url:pngB}},
+                  {type:'text',text:'Which better follows the prompt and has better visual quality? Respond ONLY with JSON (no markdown): {"winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"one sentence"}'}
+                ]}],temperature:0.1});
+                var c=(r.choices&&r.choices[0]&&r.choices[0].message&&r.choices[0].message.content)||'';
+                var m=c.match(/\\{[\\s\\S]*\\}/); var p={};
+                try{if(m)p=JSON.parse(m[0]);}catch(_){}
+                var w=['A','B','tie'].indexOf(p.winner)>=0?p.winner:null;
+                verdicts.push({judge_model:jm,winner:w,score_a:p.model_a_score!=null?p.model_a_score:null,score_b:p.model_b_score!=null?p.model_b_score:null,feedback:p.feedback||''});
+              }catch(e){verdicts.push({judge_model:jm,winner:null,error:e.message});}
+            }));
+            var valid=verdicts.filter(function(v){return v.winner;});
+            if(!valid.length) return;
+            db.prepare("INSERT INTO judge_eval_tasks (id,run_id,gen_a_id,gen_b_id,prompt_id,prompt_text,verdicts,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)").run(
+              uuidv4(),runId,ga.id,gb.id,ga.prompt_id,ga.prompt_text,JSON.stringify(verdicts),'pending',Date.now());
+            emit(runId,'judge_eval_task_ready',{promptId:ga.prompt_id,judgeCount:valid.length});
+          })(ga,gb));
+        })(pg[i],pg[j]);
+      }
+    }
+  }
+  await Promise.allSettled(taskPromises);
+  return helpers.abortCtrl.signal.aborted?'stopped':'complete';
+};`;
+
 const BUILTIN_EXTENSIONS = [
   {
     id: 'builtin-multi-judge-consensus',
@@ -1197,6 +1272,14 @@ const BUILTIN_EXTENSIONS = [
     hook_type: 'mode',
     mode_id: 'ranking_judge', mode_label: 'Ranking Judge', mode_icon: '\u{1f3c6}', mode_desc: 'Rank all outputs at once per prompt',
     fn_body: "return async function(runId, config, helpers) {\n  const models = config.models;\n  const prompts = config.prompts;\n  const judge = config.judge;\n  const judgeModel = (judge && judge.model) ? judge.model : 'google/gemini-flash-1.5';\n  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';\n\n  const genPromises = [];\n  for (const model of models) {\n    for (const prompt of prompts) {\n      genPromises.push(helpers.generateOneSVG(runId, model.id || model, prompt, config, model.reasoning_effort || null, helpers.abortCtrl.signal));\n    }\n  }\n  await Promise.allSettled(genPromises);\n  if (helpers.abortCtrl.signal.aborted) return 'stopped';\n\n  const gens = helpers.db.prepare(\"SELECT * FROM generations WHERE run_id=? AND status='complete'\").all(runId);\n  const byPrompt = {};\n  for (const g of gens) {\n    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];\n    byPrompt[g.prompt_id].push(g);\n  }\n\n  for (const promptId of Object.keys(byPrompt)) {\n    const pg = byPrompt[promptId];\n    if (pg.length < 2) continue;\n    try {\n      const contentParts = [{ type: 'text', text: 'Rank these ' + pg.length + ' SVGs for prompt: \"' + pg[0].prompt_text + '\" best to worst.\\n' }];\n      for (let i = 0; i < pg.length; i++) {\n        contentParts.push({ type: 'text', text: 'Image ' + letters[i] + ':' });\n        contentParts.push({ type: 'image_url', image_url: { url: helpers.svgToPngDataUrl(pg[i].svg_content) } });\n      }\n      const letterList = '\"' + letters.slice(0,pg.length).split('').join('\",\"') + '\"';\n      contentParts.push({ type: 'text', text: 'Respond ONLY with JSON: {\"ranking\":[' + letterList + '],\"feedback\":\"brief notes\"}\\nList from best to worst.' });\n\n      const result = await helpers.orFetch('/chat/completions', {\n        model: judgeModel,\n        messages: [{ role: 'user', content: contentParts }],\n        temperature: 0.1,\n      });\n      const content = (result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) || '';\n      const m = content.match(/\\{[\\s\\S]*\\}/);\n      let parsed = {};\n      try { if (m) parsed = JSON.parse(m[0]); } catch(e) {}\n\n      const ranking = Array.isArray(parsed.ranking) ? parsed.ranking : letters.slice(0,pg.length).split('');\n      for (let i = 0; i < pg.length; i++) {\n        for (let j = i + 1; j < pg.length; j++) {\n          const posA = ranking.indexOf(letters[i]);\n          const posB = ranking.indexOf(letters[j]);\n          const ga = pg[i], gb = pg[j];\n          const winner = posA < posB ? 'A' : posA > posB ? 'B' : 'tie';\n          const cmpId = helpers.uuidv4();\n          helpers.db.prepare(\"INSERT INTO comparisons (id,run_id,prompt_id,prompt_text,model_a_id,model_b_id,generation_a_id,generation_b_id,judge_model,judge_run,winner,model_a_score,model_b_score,thought_process,feedback,status,created_at,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'complete',?,?)\").run(\n            cmpId, runId, promptId, pg[0].prompt_text,\n            ga.model_id, gb.model_id, ga.id, gb.id,\n            judgeModel + ' (ranking)', 1, winner,\n            pg.length - (posA >= 0 ? posA : pg.length), pg.length - (posB >= 0 ? posB : pg.length),\n            'Ranking: ' + ranking.join('>'), parsed.feedback || '',\n            Date.now(), Date.now()\n          );\n        }\n      }\n    } catch(e) { console.warn('[ranking_judge]', e.message); }\n  }\n  return 'complete';\n};",
+  },
+  {
+    id: 'builtin-judge-eval',
+    name: 'Judge Evaluator',
+    description: 'Evaluates judge models by running multiple judges on SVG pairs, then collecting human votes. Judge ELO tracks which judge best matches human preference.',
+    hook_type: 'mode',
+    mode_id: 'judge_eval', mode_label: 'Judge Evaluator', mode_icon: '⚖️', mode_desc: 'Evaluate judge models — human votes determine which judge is most accurate',
+    fn_body: JUDGE_EVAL_FN_BODY,
   },
   {
     id: 'builtin-code-generation',
@@ -1371,6 +1454,88 @@ Only include the JSON block when a change is requested. Be concise and helpful. 
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ── Judge Eval Routes ────────────────────────────────────────────────────────
+
+// GET pending tasks (with SVG content for rendering)
+app.get('/api/runs/:id/judge-eval/pending', (req, res) => {
+  try {
+    const tasks = db.prepare(`
+      SELECT t.*, ga.svg_content as svg_a, gb.svg_content as svg_b,
+             ga.model_id as model_a, gb.model_id as model_b
+      FROM judge_eval_tasks t
+      LEFT JOIN generations ga ON ga.id = t.gen_a_id
+      LEFT JOIN generations gb ON gb.id = t.gen_b_id
+      WHERE t.run_id=? AND t.status='pending'
+      ORDER BY t.created_at`).all(req.params.id);
+    const total = db.prepare(`SELECT COUNT(*) as n FROM judge_eval_tasks WHERE run_id=?`).get(req.params.id)?.n || 0;
+    const done = db.prepare(`SELECT COUNT(*) as n FROM judge_eval_tasks WHERE run_id=? AND status='complete'`).get(req.params.id)?.n || 0;
+    res.json({ tasks, total, done, pending: tasks.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST human vote on a task
+app.post('/api/runs/:id/judge-eval/vote', (req, res) => {
+  const { task_id, winner } = req.body;
+  if (!task_id || !winner) return res.status(400).json({ error: 'task_id and winner required' });
+  if (!['A','B','both_bad'].includes(winner)) return res.status(400).json({ error: 'winner must be A, B, or both_bad' });
+  db.prepare(`UPDATE judge_eval_tasks SET human_winner=?, status='complete', completed_at=? WHERE id=? AND run_id=?`)
+    .run(winner, Date.now(), task_id, req.params.id);
+  emit(req.params.id, 'judge_eval_vote', { taskId: task_id, winner });
+  res.json({ ok: true });
+});
+
+// GET judge ELO leaderboard
+app.get('/api/runs/:id/judge-eval/results', (req, res) => {
+  try {
+    const run = db.prepare(`SELECT * FROM runs WHERE id=?`).get(req.params.id);
+    if (!run) return res.status(404).json({ error: 'not found' });
+    const config = JSON.parse(run.config);
+    const judges = config.judges || [];
+    const tasks = db.prepare(`SELECT id,prompt_text,verdicts,human_winner,status,created_at,completed_at FROM judge_eval_tasks WHERE run_id=?`).all(req.params.id);
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'complete').length;
+
+    const K = 32;
+    const ratings = {};
+    const stats = {};
+    for (const j of judges) { ratings[j] = 1000; stats[j] = { agree: 0, disagree: 0, total: 0 }; }
+
+    for (const task of tasks) {
+      if (task.status !== 'complete' || !task.human_winner) continue;
+      const verdicts = JSON.parse(task.verdicts || '[]');
+      const hw = task.human_winner;
+      const correct = [], wrong = [];
+      for (const v of verdicts) {
+        if (!v.winner) continue;
+        if (!ratings.hasOwnProperty(v.judge_model)) { ratings[v.judge_model] = 1000; stats[v.judge_model] = { agree: 0, disagree: 0, total: 0 }; }
+        if (hw === 'both_bad') { wrong.push(v); stats[v.judge_model].disagree++; stats[v.judge_model].total++; }
+        else if (v.winner === hw) { correct.push(v); stats[v.judge_model].agree++; stats[v.judge_model].total++; }
+        else { wrong.push(v); stats[v.judge_model].disagree++; stats[v.judge_model].total++; }
+      }
+      for (const c of correct) {
+        for (const w of wrong) {
+          const rc = ratings[c.judge_model], rw = ratings[w.judge_model];
+          const ec = 1 / (1 + Math.pow(10, (rw - rc) / 400));
+          ratings[c.judge_model] = rc + K * (1 - ec);
+          ratings[w.judge_model] = rw + K * (0 - (1 - ec));
+        }
+      }
+    }
+
+    const allJudges = [...new Set([...judges, ...Object.keys(stats)])];
+    const leaderboard = allJudges.map(j => ({
+      judge: j,
+      elo: Math.round(ratings[j] ?? 1000),
+      agree: stats[j]?.agree ?? 0,
+      disagree: stats[j]?.disagree ?? 0,
+      total: stats[j]?.total ?? 0,
+      agree_rate: (stats[j]?.total ?? 0) > 0 ? +((stats[j].agree / stats[j].total) * 100).toFixed(1) : null,
+    })).sort((a, b) => b.elo - a.elo);
+
+    res.json({ run: { ...run, config }, leaderboard, total, done, pending: total - done, tasks });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.listen(PORT, () => console.log(`PathScore running on http://localhost:${PORT}`));

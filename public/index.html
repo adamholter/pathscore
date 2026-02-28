@@ -215,6 +215,32 @@ table.lb tr:hover td{background:var(--mist);}
 .mode-card-icon{font-size:20px;margin-bottom:8px;}
 .mode-card-title{font-family:var(--font-h);font-weight:600;font-size:14px;margin-bottom:4px;}
 .mode-card-desc{font-size:11px;color:var(--stone);line-height:1.5;}
+/* Judge Eval Voting UI */
+.je-progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:20px;}
+.je-progress-fill{height:100%;background:var(--ember);border-radius:2px;transition:width .3s;}
+.je-prompt{font-family:var(--font-b);font-size:13px;color:var(--stone);text-align:center;margin-bottom:20px;letter-spacing:.04em;text-transform:uppercase;}
+.je-svgs{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:960px;margin:0 auto;}
+.je-panel{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.je-panel-label{font-family:var(--font-b);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);}
+.je-svg-img{width:100%;max-width:420px;height:320px;object-fit:contain;border:1.5px solid var(--border);border-radius:6px;background:#fafafa;}
+.je-vote-btn{width:100%;max-width:420px;padding:11px 16px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-b);font-size:13px;transition:all .15s;}
+.je-vote-btn:hover,.je-vote-btn:focus{border-color:var(--ember);background:rgba(232,77,47,.06);outline:none;}
+.je-vote-btn kbd{display:inline-block;padding:1px 5px;border:1px solid #ccc;border-radius:3px;font-size:10px;background:#f5f5f5;margin-left:6px;}
+.je-vote-bad{padding:9px 24px;border:1.5px dashed var(--border);border-radius:6px;background:#fff;cursor:pointer;font-family:var(--font-b);font-size:12px;color:var(--stone);transition:all .15s;}
+.je-vote-bad:hover{border-color:#999;color:var(--ink);}
+.je-vote-bad kbd{display:inline-block;padding:1px 5px;border:1px solid #ccc;border-radius:3px;font-size:10px;background:#f5f5f5;margin-left:4px;}
+.je-reveal{max-width:960px;margin:24px auto 0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;}
+.je-reveal-hdr{padding:12px 20px;background:var(--mist);border-bottom:1px solid var(--border);font-family:var(--font-b);font-size:11px;letter-spacing:.08em;text-transform:uppercase;}
+.je-verdict-row{display:flex;align-items:center;gap:16px;padding:10px 20px;border-bottom:1px solid var(--border);}
+.je-verdict-row:last-child{border-bottom:none;}
+.je-verdict-judge{flex:1;font-size:13px;font-family:var(--font-b);}
+.je-verdict-pick{font-weight:700;font-size:13px;}
+.je-verdict-agree{font-size:13px;font-weight:700;}
+.je-verdict-agree.correct{color:#22c55e;}
+.je-verdict-agree.wrong{color:#ef4444;}
+.je-verdict-feedback{flex:2;font-size:11px;color:var(--stone);}
+.je-next-btn{display:block;width:100%;padding:12px;background:var(--ink);color:#fff;border:none;cursor:pointer;font-family:var(--font-b);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
+.je-next-btn:hover{background:var(--ember);}
 .human-judge-panel{max-width:800px;}
 .human-cmp-card{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:24px;}
 .human-cmp-hdr{padding:14px 20px;background:var(--mist);border-bottom:1px solid var(--border);}
@@ -785,6 +811,8 @@ table.lb tr:hover td{background:var(--mist);}
         <div class="tab" id="tab-iter-btn" style="display:none" onclick="switchTab('iter',this)">Iteration Results</div>
         <div class="tab" id="tab-agree-btn" style="display:none" onclick="switchTab('agree',this)">Judge Agreement</div>
         <div class="tab" id="tab-human-btn" style="display:none" onclick="showPage('human-judge')">Human Judge &#8594;</div>
+        <div class="tab" id="tab-je-btn" style="display:none" onclick="switchTab('je-lb',this)">⚖️ Judge ELO</div>
+        <div class="tab" id="tab-je-vote-btn" style="display:none" onclick="showPage('judge-eval')">Vote on Pairs &#8594;</div>
       </div>
       <div class="tab-panel active" id="tab-lb">
         <table class="lb"><thead><tr><th style="width:40px">#</th><th>Model</th><th>ELO Score</th><th>Win Rate</th><th>W / L / T</th><th>Avg Score</th></tr></thead><tbody id="lb-body"></tbody></table>
@@ -814,6 +842,41 @@ table.lb tr:hover td{background:var(--mist);}
       </div>
       <div class="tab-panel" id="tab-agree">
         <div id="agree-wrap"></div>
+      </div>
+      <div class="tab-panel" id="tab-je-lb">
+        <div id="je-lb-wrap"></div>
+      </div>
+    </div>
+
+    <!-- JUDGE EVAL VOTING PAGE -->
+    <div id="page-judge-eval" class="page">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('results')">&#8592; Back to Results</button>
+        <h2 style="margin:0;">⚖️ Judge Evaluation</h2>
+        <span id="je-progress-label" style="font-size:12px;color:var(--stone);margin-left:auto;"></span>
+      </div>
+      <div class="je-progress-bar"><div class="je-progress-fill" id="je-progress-fill" style="width:0%"></div></div>
+      <div id="je-prompt" class="je-prompt"></div>
+      <div class="je-svgs" id="je-svgs">
+        <div class="je-panel">
+          <div class="je-panel-label">SVG A</div>
+          <img class="je-svg-img" id="je-img-a" src="" alt="SVG A">
+          <button class="je-vote-btn je-vote-a" id="je-btn-a" onclick="jeVote('A')">A is Better <kbd>←</kbd> <kbd>1</kbd></button>
+        </div>
+        <div class="je-panel">
+          <div class="je-panel-label">SVG B</div>
+          <img class="je-svg-img" id="je-img-b" src="" alt="SVG B">
+          <button class="je-vote-btn je-vote-b" id="je-btn-b" onclick="jeVote('B')">B is Better <kbd>→</kbd> <kbd>2</kbd></button>
+        </div>
+      </div>
+      <div style="text-align:center;margin:16px 0;">
+        <button class="je-vote-bad" id="je-btn-bad" onclick="jeVote('both_bad')">Both Bad — Neither is good <kbd>↓</kbd> <kbd>3</kbd></button>
+      </div>
+      <div id="je-reveal" class="je-reveal" style="display:none"></div>
+      <div id="je-done" style="display:none;text-align:center;padding:48px 0;">
+        <h3>All pairs rated!</h3>
+        <p style="color:var(--stone);margin:12px 0 24px">See how judges compared to your verdicts.</p>
+        <button class="btn btn-primary" onclick="showPage('results');switchTab('je-lb',document.getElementById('tab-je-btn'))">View Judge ELO &#8594;</button>
       </div>
     </div>
 
@@ -1244,6 +1307,7 @@ function showPage(name) {
   if (name==='extensions') loadExtensions();
   if (name==='configure') renderModeCards();
   if (name==='flow') initFlowEditor();
+  if (name==='judge-eval') showPage_judgeEval();
 }
 
 async function loadLanding() {
@@ -1867,9 +1931,19 @@ async function loadResults(id) {
   iterBtn.style.display = mode==='feedback_iteration' ? '' : 'none';
   agreeBtn.style.display = mode==='human_eval' ? '' : 'none';
   humanBtn.style.display = mode==='human_eval' ? '' : 'none';
+  const jeBtn = document.getElementById('tab-je-btn');
+  const jeVoteBtn = document.getElementById('tab-je-vote-btn');
+  jeBtn.style.display = mode==='judge_eval' ? '' : 'none';
+  jeVoteBtn.style.display = 'none'; // shown after checking pending count
   renderLB(); renderHM(); filterCmps(''); renderOutputs(); populateOutFilters();
   if (mode==='feedback_iteration') renderIterResults();
   if (mode==='human_eval') renderAgreement();
+  if (mode==='judge_eval') {
+    fetch('/api/runs/'+id+'/judge-eval/results').then(r=>r.json()).then(data => {
+      renderJELeaderboard(data);
+      jeVoteBtn.style.display = data.pending > 0 ? '' : 'none';
+    });
+  }
 }
 
 function renderLB() {
@@ -2066,6 +2140,121 @@ async function submitHumanVote(cmpId, winner) {
   humanIdx++;
   renderHumanJudge();
 }
+
+// ── Judge Eval ───────────────────────────────────────────────────────────────
+
+let jeTasks = [], jeIndex = 0, jeTotal = 0, jeDone = 0, jeRunId = null;
+
+async function showPage_judgeEval() {
+  jeRunId = currentRunId;
+  jeIndex = 0;
+  await jeLoadNext();
+}
+
+async function jeLoadNext() {
+  const data = await fetch('/api/runs/' + jeRunId + '/judge-eval/pending').then(r => r.json());
+  jeTasks = data.tasks;
+  jeTotal = data.total;
+  jeDone = data.done;
+
+  document.getElementById('je-progress-fill').style.width = jeTotal > 0 ? ((jeDone / jeTotal) * 100) + '%' : '0%';
+  document.getElementById('je-progress-label').textContent = jeDone + ' / ' + jeTotal + ' rated';
+
+  if (jeTasks.length === 0) {
+    document.getElementById('je-svgs').style.display = 'none';
+    document.getElementById('je-reveal').style.display = 'none';
+    document.getElementById('je-done').style.display = 'block';
+    document.getElementById('je-prompt').textContent = '';
+    jeLoadJudgeELO();
+    return;
+  }
+
+  document.getElementById('je-svgs').style.display = 'grid';
+  document.getElementById('je-done').style.display = 'none';
+  document.getElementById('je-reveal').style.display = 'none';
+  document.getElementById('je-btn-a').disabled = false;
+  document.getElementById('je-btn-b').disabled = false;
+  document.getElementById('je-btn-bad').disabled = false;
+
+  const task = jeTasks[0];
+  document.getElementById('je-prompt').textContent = 'Prompt: ' + (task.prompt_text || '');
+  document.getElementById('je-img-a').src = '/api/generations/' + task.gen_a_id + '/svg';
+  document.getElementById('je-img-b').src = '/api/generations/' + task.gen_b_id + '/svg';
+}
+
+async function jeVote(winner) {
+  if (!jeTasks.length) return;
+  const task = jeTasks[0];
+  document.getElementById('je-btn-a').disabled = true;
+  document.getElementById('je-btn-b').disabled = true;
+  document.getElementById('je-btn-bad').disabled = true;
+
+  await fetch('/api/runs/' + jeRunId + '/judge-eval/vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task_id: task.id, winner }),
+  });
+
+  // Reveal judge verdicts
+  const verdicts = JSON.parse(task.verdicts || '[]');
+  const reveal = document.getElementById('je-reveal');
+  const rows = verdicts.map(v => {
+    const agrees = v.winner === winner || (winner === 'both_bad' && !v.winner);
+    const agreeIcon = v.winner ? (agrees ? '✓' : '✗') : '?';
+    const agreeClass = v.winner ? (agrees ? 'correct' : 'wrong') : '';
+    const judgeShort = (v.judge_model || '').split('/').pop();
+    const pick = v.winner ? ('Picked: ' + v.winner + ' (' + (v.score_a ?? '-') + 'v' + (v.score_b ?? '-') + ')') : '(error)';
+    return `<div class="je-verdict-row">
+      <div class="je-verdict-judge">${judgeShort}</div>
+      <div class="je-verdict-pick">${pick}</div>
+      <div class="je-verdict-agree ${agreeClass}">${agreeIcon}</div>
+      <div class="je-verdict-feedback">${(v.feedback || '').slice(0, 80)}</div>
+    </div>`;
+  }).join('');
+  const humanLabel = winner === 'both_bad' ? 'Both Bad' : 'You chose: SVG ' + winner;
+  reveal.innerHTML = `<div class="je-reveal-hdr">${humanLabel} — Judge verdicts:</div>${rows}<button class="je-next-btn" onclick="jeLoadNext()">Next Pair →</button>`;
+  reveal.style.display = 'block';
+}
+
+async function jeLoadJudgeELO() {
+  const data = await fetch('/api/runs/' + currentRunId + '/judge-eval/results').then(r => r.json());
+  renderJELeaderboard(data);
+}
+
+function renderJELeaderboard(data) {
+  const lb = data.leaderboard || [];
+  const maxElo = lb.length ? Math.max(...lb.map(r => r.elo), 1001) : 1001;
+  const rows = lb.map((r, i) => {
+    const bar = Math.round(((r.elo - 900) / (maxElo - 900)) * 100);
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : String(i + 1);
+    const rate = r.agree_rate != null ? r.agree_rate + '%' : '--';
+    return `<tr>
+      <td>${medal}</td>
+      <td>${r.judge}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:var(--border);border-radius:4px;"><div style="width:${bar}%;height:100%;background:var(--ember);border-radius:4px;"></div></div><strong>${r.elo}</strong></div></td>
+      <td>${rate}</td>
+      <td>${r.agree}/${r.total}</td>
+    </tr>`;
+  }).join('');
+  const pending = data.pending > 0 ? `<p style="color:var(--stone);font-size:12px;margin-bottom:16px;">${data.pending} pair(s) still pending human votes — ELO updates as you vote.</p>` : '';
+  document.getElementById('je-lb-wrap').innerHTML = `
+    ${pending}
+    <table class="lb"><thead><tr><th>#</th><th>Judge Model</th><th>ELO Score</th><th>Agree Rate</th><th>Agree/Total</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <p style="font-size:11px;color:var(--stone);margin-top:16px;">ELO: judges that agree with human choices beat those that disagree. Starting ELO 1000, K=32.</p>`;
+  if (data.pending > 0) {
+    document.getElementById('tab-je-vote-btn').style.display = '';
+  }
+}
+
+// Keyboard shortcuts for judge eval voting
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('page-judge-eval').style.display === 'none') return;
+  if (document.getElementById('je-btn-a').disabled) return;
+  if (e.key === '1' || e.key === 'ArrowLeft') jeVote('A');
+  else if (e.key === '2' || e.key === 'ArrowRight') jeVote('B');
+  else if (e.key === '3' || e.key === 'ArrowDown') jeVote('both_bad');
+});
 
 // Export
 function exportJSON() { window.open('/api/runs/'+(document.getElementById('export-bar').dataset.runId||currentRunId)+'/export/json','_blank'); }

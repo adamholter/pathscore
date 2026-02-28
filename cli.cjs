@@ -16,12 +16,22 @@ const usage = `
 PathScore CLI
 
 Commands:
-  node cli.cjs test-quick        Run a minimal benchmark (2 models, 2 prompts) to verify the system works
-  node cli.cjs test-judge        Test judge connectivity with a dummy pair
-  node cli.cjs test-parse        Test SVG extraction from various LLM response formats
-  node cli.cjs list-runs         List all benchmark runs
-  node cli.cjs results <run-id>  Show results for a run
-  node cli.cjs status            Show server status
+  node cli.cjs status                      Check server health
+  node cli.cjs list-runs                   List all benchmark runs
+  node cli.cjs results <run-id>            Show ELO leaderboard for a run
+  node cli.cjs test-quick                  2-model 2-prompt benchmark (smoke test)
+  node cli.cjs test-judge                  Test judge API connectivity
+  node cli.cjs test-parse                  Test SVG extraction from LLM responses
+
+  node cli.cjs judge-eval-create           Create+start a judge evaluator run
+  node cli.cjs judge-eval-status <run-id>  Show pending/done task counts
+  node cli.cjs judge-eval-vote <run-id> [A|B|both_bad|auto]
+                                           Vote on next pending task (auto=random, for testing)
+  node cli.cjs judge-eval-results <run-id> Show judge ELO leaderboard
+
+LLM agent notes: IDs are 36-char UUIDs; --short 8-char prefix matching works everywhere.
+Output is token-minimal: TSV with | delimiters, no prose. judge-eval-vote auto simulates
+a full human-vote session for pipeline testing without actual human input.
 `;
 
 async function apiFetch(path, options) {
@@ -233,6 +243,143 @@ async function cmdTestJudge() {
   else { console.log('\nJudge test FAILED (could not parse response)'); console.log('Raw:', content.slice(0,300)); }
 }
 
+async function resolveRunId(runId) {
+  if (!runId) { console.error('run-id required'); process.exit(1); }
+  if (runId.length >= 36) return runId;
+  const runs = await apiFetch('/api/runs');
+  const match = runs.find(r => r.id.startsWith(runId));
+  if (!match) { console.error('Run not found:', runId); process.exit(1); }
+  return match.id;
+}
+
+async function pollUntilDone(runId, timeoutSec = 300) {
+  for (let i = 0; i < timeoutSec / 3; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    const s = await apiFetch('/api/runs/' + runId);
+    process.stdout.write('\r  status:' + s.status.padEnd(10) + ' ' + (i*3) + 's');
+    if (['complete','error','stopped'].includes(s.status)) {
+      console.log('\n  final:', s.status, s.error ? '| err:'+s.error : '');
+      return s.status;
+    }
+  }
+  console.log('\n  timeout');
+  return 'timeout';
+}
+
+async function cmdJudgeEvalCreate() {
+  if (!process.env.OPENROUTER_API_KEY) { console.error('OPENROUTER_API_KEY not set'); process.exit(1); }
+
+  // First enable the builtin-judge-eval extension if disabled
+  const exts = await apiFetch('/api/extensions');
+  const je = exts.find(e => e.id === 'builtin-judge-eval');
+  if (je && !je.enabled) {
+    await apiFetch('/api/extensions/builtin-judge-eval/toggle', { method: 'POST' });
+    console.log('Enabled builtin-judge-eval extension');
+  }
+
+  const config = {
+    mode: 'judge_eval',
+    models: [
+      { id: 'google/gemini-2.5-flash-lite', reasoning_effort: null },
+      { id: 'anthropic/claude-haiku-4.5', reasoning_effort: null },
+    ],
+    judges: [
+      'google/gemini-2.5-flash',
+      'openai/gpt-4o-mini',
+      'anthropic/claude-haiku-4.5',
+    ],
+    prompts: [
+      { id: crypto.randomUUID(), text: 'a red circle on white background', category: 'abstract' },
+      { id: crypto.randomUUID(), text: 'a simple house icon with triangular roof', category: 'icon' },
+      { id: crypto.randomUUID(), text: 'a smiling sun with eight triangular rays', category: 'illustration' },
+    ],
+    generation: { temperature: 0.7 },
+  };
+
+  const run = await apiFetch('/api/runs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'CLI Judge Eval Test', config, mode: 'judge_eval' }),
+  });
+  console.log('created|' + run.id);
+  await apiFetch('/api/runs/' + run.id + '/start', { method: 'POST' });
+  console.log('started|' + run.id);
+  const finalStatus = await pollUntilDone(run.id);
+  if (finalStatus === 'complete') {
+    const status = await apiFetch('/api/runs/' + run.id + '/judge-eval/pending');
+    console.log('tasks|total:' + status.total + '|pending:' + status.pending);
+    console.log('run-id|' + run.id);
+    console.log('next: node cli.cjs judge-eval-vote ' + run.id.slice(0,8) + ' auto');
+  }
+}
+
+async function cmdJudgeEvalStatus(runIdRaw) {
+  const runId = await resolveRunId(runIdRaw);
+  const data = await apiFetch('/api/runs/' + runId + '/judge-eval/pending');
+  console.log('run|' + runId.slice(0,8));
+  console.log('total|' + data.total + '|done|' + data.done + '|pending|' + data.pending);
+  if (data.tasks.length > 0) {
+    const t = data.tasks[0];
+    const v = JSON.parse(t.verdicts || '[]');
+    console.log('next-task|' + t.id.slice(0,8) + '|prompt:' + (t.prompt_text||'').slice(0,60));
+    console.log('judge-verdicts:');
+    for (const verdict of v) {
+      console.log('  ' + verdict.judge_model.split('/').pop().padEnd(30) + '|winner:' + (verdict.winner||'err') + '|scores:' + (verdict.score_a??'-') + 'v' + (verdict.score_b??'-'));
+    }
+  }
+}
+
+async function cmdJudgeEvalVote(runIdRaw, voteArg) {
+  const runId = await resolveRunId(runIdRaw);
+  const choices = ['A', 'B', 'both_bad'];
+  let voted = 0, skipped = 0;
+
+  while (true) {
+    const data = await apiFetch('/api/runs/' + runId + '/judge-eval/pending');
+    if (data.pending === 0) break;
+    const task = data.tasks[0];
+    const v = JSON.parse(task.verdicts || '[]');
+
+    let winner;
+    if (!voteArg || voteArg === 'auto') {
+      // Auto: pick randomly for pipeline testing
+      winner = choices[Math.floor(Math.random() * choices.length)];
+    } else if (choices.includes(voteArg)) {
+      winner = voteArg;
+    } else {
+      console.error('vote must be A, B, both_bad, or auto'); process.exit(1);
+    }
+
+    await apiFetch('/api/runs/' + runId + '/judge-eval/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_id: task.id, winner }),
+    });
+    voted++;
+    process.stdout.write('\r  voted ' + voted + '/' + data.total + ' (human:' + winner + ')  ');
+  }
+  console.log('\nvoted|' + voted + '|skipped|' + skipped);
+  console.log('next: node cli.cjs judge-eval-results ' + runId.slice(0,8));
+}
+
+async function cmdJudgeEvalResults(runIdRaw) {
+  const runId = await resolveRunId(runIdRaw);
+  const data = await apiFetch('/api/runs/' + runId + '/judge-eval/results');
+  console.log('\n== Judge ELO: ' + data.run.name + ' ==');
+  console.log('tasks|total:' + data.total + '|done:' + data.done + '|pending:' + data.pending);
+  console.log('\n#  JUDGE'.padEnd(46) + 'ELO   AGREE%  AGREE/TOTAL');
+  console.log('-'.repeat(72));
+  for (const [i, row] of data.leaderboard.entries()) {
+    const pos = String(i+1).padEnd(3);
+    const judge = (row.judge||'').slice(0,40).padEnd(43);
+    const elo = String(row.elo).padEnd(6);
+    const rate = (row.agree_rate != null ? row.agree_rate + '%' : '--').padEnd(8);
+    const wl = row.agree + '/' + row.total;
+    console.log(pos + judge + elo + rate + wl);
+  }
+  console.log('');
+}
+
 const [,, cmd, ...args] = process.argv;
 if (!cmd) { console.log(usage); process.exit(0); }
 
@@ -245,6 +392,10 @@ if (!cmd) { console.log(usage); process.exit(0); }
       case 'test-quick': await cmdTestQuick(); break;
       case 'test-parse': await cmdTestParse(); break;
       case 'test-judge': await cmdTestJudge(); break;
+      case 'judge-eval-create': await cmdJudgeEvalCreate(); break;
+      case 'judge-eval-status': await cmdJudgeEvalStatus(args[0]); break;
+      case 'judge-eval-vote': await cmdJudgeEvalVote(args[0], args[1]); break;
+      case 'judge-eval-results': await cmdJudgeEvalResults(args[0]); break;
       default: console.log('Unknown command:', cmd); console.log(usage); process.exit(1);
     }
   } catch(e) {
