@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PathScore — SVG Generation Benchmark</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0a0a0a;--ember:#e84d2f;--white:#ffffff;--mist:#f5f5f5;--stone:#999999;--border:#e8e8e8;--font-h:'Syne',sans-serif;--font-b:'IBM Plex Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-b);background:var(--white);color:var(--ink);font-size:14px;line-height:1.6;}
+a{color:inherit;text-decoration:none;}
+.app{min-height:100vh;display:flex;flex-direction:column;}
+.nav{border-bottom:1.5px solid var(--border);padding:0 32px;display:flex;align-items:center;gap:32px;height:56px;background:var(--white);position:sticky;top:0;z-index:100;}
+.nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.nav-logo-text{font-family:var(--font-h);font-weight:800;font-size:18px;letter-spacing:-0.02em;}
+.nav-dot{width:8px;height:8px;background:var(--ember);border-radius:50%;}
+.nav-links{display:flex;gap:24px;margin-left:auto;}
+.nav-link{font-size:12px;font-weight:500;letter-spacing:0.04em;color:var(--stone);cursor:pointer;transition:color .15s;}
+.nav-link:hover,.nav-link.active{color:var(--ink);}
+.main{flex:1;}
+.page{display:none;padding:48px 32px;max-width:1200px;margin:0 auto;}
+.page.active{display:block;}
+h1{font-family:var(--font-h);font-weight:800;font-size:36px;letter-spacing:-0.03em;line-height:1.1;}
+h2{font-family:var(--font-h);font-weight:700;font-size:22px;letter-spacing:-0.02em;}
+h3{font-family:var(--font-h);font-weight:600;font-size:16px;}
+.stone{color:var(--stone);}
+.ember{color:var(--ember);}
+.btn{font-family:var(--font-b);font-weight:500;font-size:13px;letter-spacing:0.04em;padding:10px 20px;border-radius:4px;border:none;cursor:pointer;transition:opacity .15s;display:inline-flex;align-items:center;gap:8px;}
+.btn:hover{opacity:.85;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--ink);color:white;}
+.btn-accent{background:var(--ember);color:white;}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--ink);padding:9px 19px;}
+.btn-ghost{background:transparent;color:var(--stone);padding:8px 12px;}
+.btn-sm{font-size:11px;padding:7px 14px;}
+.card{border:1.5px solid var(--border);border-radius:6px;padding:20px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.field{margin-bottom:20px;}
+.label{display:block;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--stone);margin-bottom:8px;}
+input[type=text],input[type=number],select,textarea{width:100%;font-family:var(--font-b);font-size:13px;padding:10px 12px;border:1.5px solid var(--border);border-radius:4px;background:var(--white);color:var(--ink);outline:none;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);}
+.divider{border:none;border-top:1.5px solid var(--border);margin:28px 0;}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;}
+.s-draft .status-dot{background:var(--stone);}
+.s-running .status-dot{background:#2196F3;animation:pulse 1s infinite;}
+.s-complete .status-dot{background:#4CAF50;}
+.s-error .status-dot{background:var(--ember);}
+.s-stopped .status-dot{background:var(--stone);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.pbar{height:3px;background:var(--mist);border-radius:2px;overflow:hidden;}
+.pbar-fill{height:100%;background:var(--ember);transition:width .3s;border-radius:2px;}
+
+/* HOME */
+.hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:48px;}
+.hero-eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;}
+.hero h1{margin-bottom:16px;}
+.hero-sub{font-size:15px;color:var(--stone);max-width:560px;line-height:1.7;margin-bottom:32px;}
+.run-list{display:flex;flex-direction:column;gap:12px;}
+.run-card{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:24px;padding:20px 24px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;transition:border-color .15s;}
+.run-card:hover{border-color:var(--ink);}
+.run-card-name{font-family:var(--font-h);font-weight:600;font-size:15px;margin-bottom:4px;}
+.run-card-meta{font-size:11px;color:var(--stone);display:flex;gap:16px;}
+.run-progress-col{min-width:140px;}
+.run-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--stone);margin-bottom:6px;}
+.empty-state{padding:64px;text-align:center;color:var(--stone);border:1.5px dashed var(--border);border-radius:6px;}
+.empty-state h3{font-family:var(--font-h);margin-bottom:8px;color:var(--ink);}
+
+/* CONFIGURE */
+.config-layout{display:grid;grid-template-columns:240px 1fr;gap:48px;}
+.config-sidebar{position:sticky;top:72px;height:fit-content;}
+.config-steps{display:flex;flex-direction:column;gap:4px;}
+.config-step{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:4px;cursor:pointer;font-size:13px;color:var(--stone);transition:all .15s;}
+.config-step:hover{background:var(--mist);color:var(--ink);}
+.config-step.active{background:var(--ink);color:white;}
+.config-step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.config-panel{display:none;}
+.config-panel.active{display:block;}
+.model-search-wrap{position:relative;margin-bottom:8px;}
+.model-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--stone);pointer-events:none;}
+.model-search-input{padding-left:36px !important;}
+.model-dropdown{border:1.5px solid var(--border);border-radius:4px;max-height:280px;overflow-y:auto;background:white;}
+.model-option{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .1s;}
+.model-option:last-child{border-bottom:none;}
+.model-option:hover,.model-option.selected{background:var(--mist);}
+.model-option-id{font-size:12px;}
+.model-option-meta{font-size:11px;color:var(--stone);white-space:nowrap;}
+.load-more{text-align:center;padding:10px;cursor:pointer;font-size:12px;color:var(--stone);border-top:1px solid var(--border);}
+.load-more:hover{color:var(--ink);}
+.sel-models{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.sel-model-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--mist);border-radius:4px;}
+.sel-model-id{font-size:12px;flex:1;word-break:break-all;}
+.reasoning-sel{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:3px;background:white;font-family:var(--font-b);}
+.rm-btn{background:none;border:none;cursor:pointer;color:var(--stone);font-size:18px;padding:0 4px;line-height:1;}
+.rm-btn:hover{color:var(--ember);}
+.prompt-list{display:flex;flex-direction:column;gap:8px;}
+.prompt-row{display:flex;align-items:center;gap:8px;}
+.prompt-text-input{flex:1;}
+.prompt-cat{width:140px;}
+.adv-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--stone);padding:8px 0;border:none;background:none;font-family:var(--font-b);}
+.adv-toggle:hover{color:var(--ink);}
+.adv-toggle svg{transition:transform .2s;}
+.adv-toggle.open svg{transform:rotate(90deg);}
+.adv-section{display:none;padding-top:16px;border-top:1px solid var(--border);margin-top:12px;}
+.adv-section.open{display:block;}
+.rr{display:flex;align-items:center;gap:12px;}
+.rr input[type=range]{flex:1;}
+.rv{font-size:13px;color:var(--stone);min-width:50px;text-align:right;}
+.ai-gen-box{background:var(--mist);border-radius:6px;padding:16px;margin-top:16px;}
+.ai-gen-row{display:flex;gap:8px;}
+
+/* RUN */
+.run-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+.stat-box{border:1.5px solid var(--border);border-radius:6px;padding:16px 20px;}
+.stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:8px;}
+.stat-val{font-family:var(--font-h);font-weight:800;font-size:28px;}
+.stat-sub{font-size:11px;color:var(--stone);margin-top:4px;}
+.run-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.event-feed{max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.event-item{padding:10px 14px;border-radius:4px;font-size:12px;border-left:3px solid transparent;}
+.ev-gen-start{background:#f0f4ff;border-color:#2196F3;}
+.ev-gen-ok{background:#f0fff4;border-color:#4CAF50;}
+.ev-gen-err{background:#fff0f0;border-color:var(--ember);}
+.ev-cmp-start{background:var(--mist);border-color:var(--stone);}
+.ev-cmp-ok{background:#fff8f0;border-color:#FF9800;}
+.ev-cmp-err{background:#fff0f0;border-color:var(--ember);}
+.ev-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.ev-title{font-weight:500;font-size:11px;letter-spacing:.04em;}
+.ev-time{font-size:10px;color:var(--stone);}
+.ev-meta{font-size:11px;color:var(--stone);}
+.wb{font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
+.wb-a{background:#e3f2fd;color:#1565C0;}
+.wb-b{background:#fce4ec;color:#880E4F;}
+.wb-tie{background:var(--mist);color:var(--stone);}
+.svg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-height:480px;overflow-y:auto;}
+.svg-thumb{border:1.5px solid var(--border);border-radius:4px;overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.svg-thumb:hover{border-color:var(--ink);}
+.svg-thumb-img{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--mist);}
+.svg-thumb-img img{width:100%;height:100%;object-fit:contain;}
+.svg-thumb-meta{padding:6px 8px;}
+.svg-thumb-model{font-size:10px;color:var(--stone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.svg-thumb-prompt{font-size:10px;color:var(--stone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* RESULTS */
+table.lb{width:100%;}
+table.lb th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);padding:10px 16px;border-bottom:1.5px solid var(--border);font-weight:500;}
+table.lb td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.lb tr:hover td{background:var(--mist);}
+.rank{font-family:var(--font-h);font-weight:800;font-size:18px;}
+.r1{color:#B8860B;}.r2{color:var(--stone);}.r3{color:#CD7F32;}
+.elo-bar-row{display:flex;align-items:center;gap:12px;}
+.elo-bar{height:8px;background:var(--mist);border-radius:4px;flex:1;min-width:80px;overflow:hidden;}
+.elo-bar-fill{height:100%;background:var(--ember);border-radius:4px;}
+.elo-num{font-family:var(--font-h);font-weight:700;font-size:15px;min-width:50px;}
+.hm-wrap{overflow-x:auto;}
+.hm-table{border-collapse:collapse;}
+.hm-table th{font-size:11px;color:var(--stone);padding:8px 12px;font-weight:400;white-space:nowrap;}
+.hm-table td{width:80px;height:60px;text-align:center;border:2px solid white;}
+.hm-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-size:12px;font-weight:500;border-radius:3px;}
+.hm-na{background:var(--mist);color:var(--stone);}
+.hm-row-lbl{font-size:11px;color:var(--stone);white-space:nowrap;padding-right:12px;text-align:right;}
+.tabs{display:flex;gap:0;border-bottom:1.5px solid var(--border);margin-bottom:32px;}
+.tab{font-family:var(--font-b);font-size:12px;font-weight:500;letter-spacing:.04em;padding:12px 20px;cursor:pointer;border-bottom:2px solid transparent;color:var(--stone);margin-bottom:-1.5px;transition:all .15s;}
+.tab:hover{color:var(--ink);}
+.tab.active{color:var(--ink);border-bottom-color:var(--ember);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.export-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 20px;background:var(--mist);border-radius:6px;margin-bottom:32px;}
+.export-lbl{font-size:11px;color:var(--stone);letter-spacing:.06em;text-transform:uppercase;}
+.cmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.cmp-card{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.cmp-card-hdr{padding:12px 16px;background:var(--mist);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.cmp-prompt{font-size:11px;color:var(--stone);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmp-images{display:grid;grid-template-columns:1fr 1fr;}
+.cmp-img-slot{padding:12px;}
+.cmp-svg-box{aspect-ratio:1;border:1px solid var(--border);border-radius:3px;overflow:hidden;background:var(--mist);cursor:pointer;}
+.cmp-svg-box img{width:100%;height:100%;object-fit:contain;}
+.cmp-card-ftr{padding:10px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--stone);}
+.outputs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,10,.6);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:6px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;position:relative;}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);}
+.modal-close:hover{color:var(--ink);}
+
+/* ABOUT */
+.about-hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:48px;}
+.about-sec{margin-bottom:48px;}
+.about-sec h2{margin-bottom:20px;}
+.about-sec p{color:var(--stone);line-height:1.8;margin-bottom:16px;}
+.about-sec code{font-family:var(--font-b);background:var(--mist);padding:2px 6px;border-radius:3px;font-size:12px;}
+.formula{background:var(--mist);border-radius:6px;padding:20px 24px;font-family:var(--font-b);font-size:13px;margin:16px 0;}
+.flow{display:flex;align-items:center;gap:0;margin:24px 0;flex-wrap:wrap;}
+.flow-box{background:var(--ink);color:white;padding:10px 20px;border-radius:4px;font-size:12px;white-space:nowrap;}
+.flow-arr{padding:0 12px;color:var(--stone);font-size:18px;}
+.cat-pill{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:12px;background:var(--mist);color:var(--stone);margin:2px;}
+
+/* TOAST */
+.toasts{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--ink);color:white;padding:12px 20px;border-radius:4px;font-size:13px;animation:toastIn .2s;max-width:360px;}
+.toast.err{background:var(--ember);}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--mist);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--stone);}
+@media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-logo" onclick="showPage('home')">
+      <img src="https://v3b.fal.media/files/b/0a904aba/phohUpKoFjUi8SJeTTE7H_u1F8u2cx.png" style="width:22px;height:22px;object-fit:contain;" alt="">
+      <span class="nav-logo-text">PathScore</span>
+      <span class="nav-dot"></span>
+    </div>
+    <div class="nav-links">
+      <span class="nav-link active" data-page="home" onclick="showPage('home')">Benchmarks</span>
+      <span class="nav-link" data-page="about" onclick="showPage('about')">Methodology</span>
+    </div>
+  </nav>
+  <main class="main">
+
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+      <div class="hero">
+        <div class="hero-eyebrow">SVG Generation Benchmark</div>
+        <h1>Measure what <span class="ember">models</span><br>can actually draw.</h1>
+        <p class="hero-sub">PathScore runs any set of OpenRouter models against a prompt dataset, uses a VLM judge to compare outputs pairwise, and produces ELO rankings you can trust.</p>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button class="btn btn-accent" onclick="startNewBenchmark()">+ New Benchmark</button>
+          <label class="btn btn-outline" style="cursor:pointer">Import Results<input type="file" accept=".json" style="display:none" onchange="importResults(event)"></label>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h2>Your Benchmarks</h2>
+        <span id="runs-count" class="stone" style="font-size:12px;"></span>
+      </div>
+      <div id="runs-list" class="run-list"></div>
+    </div>
+
+    <!-- CONFIGURE -->
+    <div id="page-configure" class="page">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('home')">← Back</button>
+        <h1 id="cfg-title">New Benchmark</h1>
+      </div>
+      <div class="config-layout">
+        <div class="config-sidebar">
+          <div class="config-steps">
+            <div class="config-step active" onclick="showStep(0)" data-step="0"><div class="config-step-num">1</div>Models</div>
+            <div class="config-step" onclick="showStep(1)" data-step="1"><div class="config-step-num">2</div>Prompts</div>
+            <div class="config-step" onclick="showStep(2)" data-step="2"><div class="config-step-num">3</div>Judge</div>
+            <div class="config-step" onclick="showStep(3)" data-step="3"><div class="config-step-num">4</div>Settings</div>
+          </div>
+          <hr class="divider">
+          <div style="font-size:12px;color:var(--stone);line-height:1.8;">
+            <div id="sum-models">0 models</div>
+            <div id="sum-prompts">0 prompts</div>
+            <div id="sum-judge">No judge set</div>
+          </div>
+          <hr class="divider">
+          <button class="btn btn-accent" style="width:100%" onclick="saveAndRun()">Run Benchmark →</button>
+          <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="saveDraft()">Save Draft</button>
+        </div>
+        <div>
+          <!-- Step 0: Models -->
+          <div class="config-panel active" id="panel-0">
+            <div style="margin-bottom:32px;"><h2>Select Models</h2><p class="stone" style="font-size:13px;margin-top:6px;">Choose OpenRouter models to benchmark. Search by name or ID. Set reasoning effort per-model if supported.</p></div>
+            <div class="model-search-wrap">
+              <svg class="model-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="model-search-input" id="model-search" placeholder="Search models..." oninput="searchModels(this.value)" onfocus="showModelDD()">
+            </div>
+            <div class="model-dropdown" id="model-dd" style="display:none">
+              <div id="model-options"></div>
+              <div class="load-more" id="model-load-more" onclick="loadMoreModels()" style="display:none">Load more</div>
+            </div>
+            <div id="sel-models" class="sel-models"></div>
+            <button class="adv-toggle" onclick="toggleAdv('adv-gen',this)">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              Advanced generation settings
+            </button>
+            <div class="adv-section" id="adv-gen">
+              <div class="grid2">
+                <div class="field"><label class="label">Max Tokens</label><input type="number" id="gen-max-tokens" value="4096" min="256" max="16384"></div>
+                <div class="field"><label class="label">Temperature</label><div class="rr"><input type="range" id="gen-temp" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('gen-temp-v').textContent=this.value"><span class="rv" id="gen-temp-v">0.7</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 1: Prompts -->
+          <div class="config-panel" id="panel-1">
+            <div style="margin-bottom:32px;"><h2>Prompt Dataset</h2><p class="stone" style="font-size:13px;margin-top:6px;">Each model receives every prompt. Results scale as N×(N-1)/2 pairs per prompt.</p></div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+              <button class="btn btn-outline btn-sm" onclick="loadDefaultPrompts()">Load defaults</button>
+              <button class="btn btn-outline btn-sm" onclick="addPromptRow()">+ Add prompt</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearPrompts()" style="margin-left:auto">Clear all</button>
+            </div>
+            <div id="prompt-list" class="prompt-list"></div>
+            <div class="ai-gen-box">
+              <h3 style="font-size:13px;margin-bottom:12px;">AI-Assisted Generation</h3>
+              <p style="font-size:12px;color:var(--stone);margin-bottom:12px;">Describe what you want to test and we'll generate relevant prompts.</p>
+              <div class="ai-gen-row">
+                <input type="text" id="ai-gen-desc" placeholder="e.g. logo design challenges, gradient experiments..." style="flex:1">
+                <input type="number" id="ai-gen-count" value="8" min="1" max="20" style="width:70px">
+                <button class="btn btn-primary btn-sm" onclick="generatePrompts()" id="ai-gen-btn">Generate</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Judge -->
+          <div class="config-panel" id="panel-2">
+            <div style="margin-bottom:32px;"><h2>Judge Configuration</h2><p class="stone" style="font-size:13px;margin-top:6px;">Select a vision-capable model to evaluate pairwise SVG comparisons.</p></div>
+            <div class="field">
+              <label class="label">Judge Model</label>
+              <div class="model-search-wrap">
+                <svg class="model-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="model-search-input" id="judge-search" placeholder="Search judge model..." oninput="searchJudge(this.value)" onfocus="showJudgeDD()">
+              </div>
+              <div class="model-dropdown" id="judge-dd" style="display:none"><div id="judge-options"></div></div>
+              <div id="judge-sel" style="margin-top:8px;font-size:12px;color:var(--stone);"></div>
+            </div>
+            <div style="background:var(--mist);border-radius:6px;padding:16px;margin-bottom:20px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;">
+                <img src="https://v3b.fal.media/files/b/0a904aba/ZsKzgeuI87WgKT69VO7xe_Su5oy48B.png" style="width:28px;height:28px;opacity:.7;" alt="">
+                <div>
+                  <div style="font-size:12px;font-weight:500;margin-bottom:4px;">How judging works</div>
+                  <div style="font-size:11px;color:var(--stone);line-height:1.6;">Both SVGs are encoded as images and sent to the judge VLM. It evaluates prompt adherence and visual quality, returning a winner (A/B/tie) and 0–10 scores for each.</div>
+                </div>
+              </div>
+            </div>
+            <button class="adv-toggle" onclick="toggleAdv('adv-judge',this)">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              Advanced judge settings
+            </button>
+            <div class="adv-section" id="adv-judge">
+              <div class="field">
+                <label class="label">Judge Runs Per Pair</label>
+                <p style="font-size:11px;color:var(--stone);margin-bottom:8px;">Run judge multiple times to reduce variance. Each extra run multiplies comparison API cost.</p>
+                <div class="rr"><input type="range" id="judge-runs" min="1" max="5" step="1" value="1" oninput="document.getElementById('judge-runs-v').textContent=this.value+(this.value>1?' runs':' run')"><span class="rv" id="judge-runs-v">1 run</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Settings -->
+          <div class="config-panel" id="panel-3">
+            <div style="margin-bottom:32px;"><h2>Benchmark Settings</h2></div>
+            <div class="field"><label class="label">Benchmark Name</label><input type="text" id="bench-name" placeholder="e.g. Small models — Feb 2026"></div>
+            <hr class="divider">
+            <div id="bench-estimate" style="background:var(--mist);border-radius:6px;padding:20px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RUN -->
+    <div id="page-run" class="page">
+      <div class="run-header">
+        <div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:8px">← Back</button>
+          <h2 id="run-title">Running...</h2>
+          <div id="run-status" style="margin-top:6px;font-size:12px;display:flex;align-items:center;gap:6px;"></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary btn-sm" onclick="viewResults(currentRunId)" id="btn-view-results" style="display:none">View Results →</button>
+          <button class="btn btn-outline btn-sm" id="btn-stop" onclick="stopRun()">Stop</button>
+          <a id="btn-export" class="btn btn-outline btn-sm" href="#">Export JSON</a>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-label">Generations</div><div class="stat-val" id="st-gen-done">0</div><div class="stat-sub" id="st-gen-total">of — total</div></div>
+        <div class="stat-box"><div class="stat-label">Comparisons</div><div class="stat-val" id="st-cmp-done">0</div><div class="stat-sub" id="st-cmp-total">of — total</div></div>
+        <div class="stat-box"><div class="stat-label">Errors</div><div class="stat-val" id="st-errors" style="color:var(--ember)">0</div><div class="stat-sub">gen + judge</div></div>
+        <div class="stat-box"><div class="stat-label">Elapsed</div><div class="stat-val" id="st-elapsed">0:00</div><div class="stat-sub">mm:ss</div></div>
+      </div>
+      <div class="pbar" style="margin-bottom:32px;"><div class="pbar-fill" id="run-pbar" style="width:0%"></div></div>
+      <div class="run-cols">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3>Live Feed</h3>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ev-feed').innerHTML=''">Clear</button>
+          </div>
+          <div class="event-feed" id="ev-feed"></div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3>Generated SVGs</h3>
+            <span id="svg-count" style="font-size:11px;color:var(--stone);">0 rendered</span>
+          </div>
+          <div class="svg-grid" id="svg-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="page-results" class="page">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:16px">← Back</button>
+      <h1 id="res-title">Results</h1>
+      <p id="res-sub" class="stone" style="margin-top:8px;font-size:13px;margin-bottom:32px;"></p>
+      <div class="export-bar" id="export-bar">
+        <span class="export-lbl">Export:</span>
+        <button class="btn btn-outline btn-sm" onclick="exportJSON()">JSON dataset</button>
+        <button class="btn btn-outline btn-sm" onclick="exportHTML()">HTML report</button>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">PDF (print)</button>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('lb',this)">ELO Leaderboard</div>
+        <div class="tab" onclick="switchTab('hm',this)">Win Rate Heatmap</div>
+        <div class="tab" onclick="switchTab('cmps',this)">Comparisons</div>
+        <div class="tab" onclick="switchTab('out',this)">All Outputs</div>
+      </div>
+      <div class="tab-panel active" id="tab-lb">
+        <table class="lb"><thead><tr><th style="width:40px">#</th><th>Model</th><th>ELO Score</th><th>Win Rate</th><th>W / L / T</th><th>Avg Score</th></tr></thead><tbody id="lb-body"></tbody></table>
+      </div>
+      <div class="tab-panel" id="tab-hm">
+        <p style="font-size:13px;color:var(--stone);margin-bottom:16px;">Row = challenger model (A), column = opponent model (B). Cell = challenger win rate. <span class="ember">Red</span> = high wins, <span style="color:#4CAF50">green</span> = low wins.</p>
+        <div class="hm-wrap" id="hm-wrap"></div>
+      </div>
+      <div class="tab-panel" id="tab-cmps">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+          <input type="text" id="cmp-filter" placeholder="Filter by model or prompt..." style="max-width:300px" oninput="filterCmps(this.value)">
+          <select id="cmp-wf" onchange="filterCmps(document.getElementById('cmp-filter').value)" style="max-width:160px"><option value="">All outcomes</option><option value="A">A wins</option><option value="B">B wins</option><option value="tie">Tie</option></select>
+        </div>
+        <div class="cmp-grid" id="cmp-grid"></div>
+        <div id="cmp-more" style="text-align:center;margin-top:20px;"></div>
+      </div>
+      <div class="tab-panel" id="tab-out">
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
+          <select id="out-mf" onchange="renderOutputs()" style="max-width:240px"><option value="">All models</option></select>
+          <select id="out-pf" onchange="renderOutputs()" style="max-width:280px"><option value="">All prompts</option></select>
+        </div>
+        <div class="outputs-grid" id="out-grid"></div>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div id="page-about" class="page">
+      <div class="about-hero">
+        <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;">Methodology</div>
+        <h1>How PathScore works</h1>
+        <p style="font-size:15px;color:var(--stone);max-width:560px;line-height:1.7;margin-top:16px;">A transparent, reproducible framework for comparing SVG generation quality across language models.</p>
+      </div>
+      <div class="about-sec"><h2>The pipeline</h2>
+        <div class="flow">
+          <div class="flow-box">Prompt Dataset</div><div class="flow-arr">→</div>
+          <div class="flow-box">N × M Generations</div><div class="flow-arr">→</div>
+          <div class="flow-box">Pairwise Judging</div><div class="flow-arr">→</div>
+          <div class="flow-box">ELO Rankings</div>
+        </div>
+        <p>For N models and M prompts, PathScore generates N×M SVGs in parallel. It then creates all N×(N-1)/2 unique pairings per prompt, randomly assigning which generation appears as Model A and which as Model B to eliminate position bias. All pairings are judged concurrently.</p>
+      </div>
+      <div class="about-sec"><h2>Position bias elimination</h2>
+        <p>VLMs can systematically prefer the first or second image shown. PathScore randomizes A/B positions for each pair so no model is consistently advantaged. With multiple judge runs, positions are re-randomized each time and scores aggregated.</p>
+      </div>
+      <div class="about-sec"><h2>ELO rating system</h2>
+        <p>Standard ELO starting at 1000 with K=32. Comparisons are processed chronologically, so rankings shift live during a run.</p>
+        <div class="formula">E<sub>A</sub> = 1 / (1 + 10^((R<sub>B</sub> − R<sub>A</sub>) / 400))<br><br>Win: R'<sub>A</sub> = R<sub>A</sub> + 32 × (1 − E<sub>A</sub>)<br>Loss: R'<sub>A</sub> = R<sub>A</sub> + 32 × (0 − E<sub>A</sub>)<br>Tie: R'<sub>A</sub> = R<sub>A</sub> + 32 × (0.5 − E<sub>A</sub>)</div>
+      </div>
+      <div class="about-sec"><h2>Comparison count</h2>
+        <p>For N models, M prompts, R judge runs:</p>
+        <div class="formula">Total comparisons = M × N × (N − 1) / 2 × R</div>
+        <p>Example: 5 models, 10 prompts, 1 judge run = <strong>100 comparisons</strong>. Plan API costs accordingly.</p>
+      </div>
+      <div class="about-sec"><h2>Prompt categories</h2>
+        <p>PathScore ships with defaults across multiple categories. AI-assisted generation creates targeted prompts from a natural language description.</p>
+        <div><span class="cat-pill">illustration</span><span class="cat-pill">logo</span><span class="cat-pill">icon</span><span class="cat-pill">data-visualization</span><span class="cat-pill">abstract</span><span class="cat-pill">typography</span><span class="cat-pill">scene</span></div>
+      </div>
+      <div class="about-sec"><h2>Reasoning effort</h2>
+        <p>For models supporting chain-of-thought, configure reasoning effort per-model: <code>low</code>, <code>medium</code>, or <code>high</code>. Compare the same base model at different reasoning budgets within a single run.</p>
+      </div>
+      <div class="about-sec"><h2>Data portability</h2>
+        <p>Every run exports as JSON (all configs, SVGs, comparisons, metadata). Import to continue interrupted runs or share results. The HTML export produces a standalone shareable report. PDF via browser print.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- SVG Modal -->
+<div class="modal-overlay" id="svg-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('svg-modal').classList.remove('open')">✕</button>
+    <h3 id="modal-model" style="margin-bottom:8px;"></h3>
+    <p id="modal-prompt" style="font-size:12px;color:var(--stone);margin-bottom:16px;"></p>
+    <div id="modal-img" style="border:1.5px solid var(--border);border-radius:4px;padding:16px;background:var(--mist);"></div>
+    <pre id="modal-code" style="display:none;margin-top:12px;background:#f9f9f9;border:1px solid var(--border);border-radius:4px;padding:12px;font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;"></pre>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-code').style.display=document.getElementById('modal-code').style.display==='none'?'block':'none'">Toggle code</button>
+      <a id="modal-dl" class="btn btn-outline btn-sm" href="#" download>Download SVG</a>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// State
+let currentRunId = null;
+let sseConn = null;
+let cfg = { models: [], prompts: [], judge: { model: 'google/gemini-3-flash-preview', runs: 1 }, generation: { max_tokens: 4096, temperature: 0.7 }, name: '' };
+let editRunId = null;
+let allModels = [];
+let modelOffset = 0;
+let modelQ = '';
+let runStats = { genDone:0, genTotal:0, cmpDone:0, cmpTotal:0, errors:0 };
+let runStart = null;
+let elapsedTmr = null;
+let resultsData = null;
+let allCmps = [];
+let cmpPage = 0;
+const CMP_PS = 24;
+
+// Utils
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+function fmt(ms) {
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  return m+':'+String(ss).padStart(2,'0');
+}
+function sm(id) { return id.split('/').pop() || id; }
+function trunc(s, n) { return s && s.length > n ? s.slice(0,n)+'...' : (s||''); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// Navigation
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page===name));
+  if (name==='home') loadRuns();
+}
+
+// HOME
+async function loadRuns() {
+  const res = await fetch('/api/runs');
+  const runs = await res.json();
+  const el = document.getElementById('runs-list');
+  document.getElementById('runs-count').textContent = runs.length + ' benchmark' + (runs.length!==1?'s':'');
+  if (!runs.length) {
+    el.innerHTML = '<div class="empty-state"><img src="https://v3b.fal.media/files/b/0a904aba/iqE6mb1Ni9h-omdgQgrN2_iI5ILCL5.png" style="width:48px;height:48px;opacity:.3;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto;"><h3>No benchmarks yet</h3><p>Create your first benchmark to evaluate SVG generation quality.</p></div>';
+    return;
+  }
+  el.innerHTML = runs.map(r => {
+    const total = r.genTotal + r.cmpTotal;
+    const done = r.genDone + r.cmpDone;
+    const pct = total > 0 ? Math.round(done/total*100) : 0;
+    const date = new Date(r.created_at).toLocaleDateString();
+    const genInfo = r.genTotal ? r.genDone+'/'+r.genTotal+' SVGs' : '';
+    const cmpInfo = r.cmpTotal ? r.cmpDone+'/'+r.cmpTotal+' cmps' : '';
+    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(\''+r.id+'\')">Results</button>' : '') +
+      (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(\''+r.id+'\')">Run</button>' : '') +
+      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(\''+r.id+'\',this)">✕</button>';
+    return '<div class="run-card" onclick="openRun(\''+r.id+'\',\''+r.status+'\')">' +
+      '<div><div class="run-card-name">'+esc(r.name)+'</div>' +
+      '<div class="run-card-meta"><span>'+date+'</span>'+(genInfo?'<span>'+genInfo+'</span>':'')+(cmpInfo?'<span>'+cmpInfo+'</span>':'')+'</div></div>' +
+      '<div class="run-progress-col"><div class="run-progress-label"><span class="s-'+r.status+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+r.status+'</span><span>'+pct+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+pct+'%"></div></div></div>' +
+      '<div style="display:flex;gap:6px;">'+actions+'</div></div>';
+  }).join('');
+}
+
+function openRun(id, status) {
+  if (status==='complete') viewResults(id);
+  else if (status==='running') openLiveRun(id);
+  else editAndRun(id);
+}
+
+async function deleteRun(id, btn) {
+  btn.disabled = true;
+  await fetch('/api/runs/'+id, {method:'DELETE'});
+  loadRuns(); toast('Deleted');
+}
+
+// CONFIGURE
+function startNewBenchmark() {
+  editRunId = null;
+  cfg = { models:[{id:'qwen/qwen3.5-122b-a10b',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
+  document.getElementById('cfg-title').textContent = 'New Benchmark';
+  document.getElementById('bench-name').value = cfg.name;
+  document.getElementById('judge-search').value = cfg.judge.model;
+  document.getElementById('judge-sel').textContent = 'Judge: '+cfg.judge.model;
+  showStep(0);
+  renderSelModels();
+  loadDefaultPrompts();
+  showPage('configure');
+  initModelSearch();
+}
+
+async function editAndRun(id) {
+  const res = await fetch('/api/runs/'+id);
+  const run = await res.json();
+  editRunId = id;
+  cfg = run.config;
+  if (!cfg.name) cfg.name = run.name;
+  document.getElementById('cfg-title').textContent = esc(run.name);
+  document.getElementById('bench-name').value = run.name;
+  document.getElementById('judge-search').value = cfg.judge?.model||'';
+  document.getElementById('judge-sel').textContent = 'Judge: '+(cfg.judge?.model||'none');
+  document.getElementById('judge-runs').value = cfg.judge?.runs||1;
+  document.getElementById('judge-runs-v').textContent = (cfg.judge?.runs||1)+' run'+((cfg.judge?.runs||1)>1?'s':'');
+  renderSelModels();
+  renderPromptList();
+  showStep(0);
+  showPage('configure');
+  initModelSearch();
+}
+
+function showStep(idx) {
+  document.querySelectorAll('.config-step').forEach((el,i) => el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.config-panel').forEach((el,i) => el.classList.toggle('active',i===idx));
+  if (idx===3) updateEstimate();
+  updateSum();
+}
+
+function updateSum() {
+  document.getElementById('sum-models').textContent = cfg.models.length+' model'+(cfg.models.length!==1?'s':'');
+  document.getElementById('sum-prompts').textContent = cfg.prompts.length+' prompt'+(cfg.prompts.length!==1?'s':'');
+  document.getElementById('sum-judge').textContent = cfg.judge?.model ? trunc(cfg.judge.model,30) : 'No judge';
+}
+
+function updateEstimate() {
+  const N=cfg.models.length, M=cfg.prompts.length, R=cfg.judge?.runs||1;
+  const gens=N*M, cmps=M*N*(N-1)/2*R;
+  document.getElementById('bench-estimate').innerHTML = '<h3 style="margin-bottom:12px;">Estimate</h3>' +
+    '<div class="grid3" style="gap:12px;">' +
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">SVG Generations</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+gens+'</div></div>' +
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Comparisons</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+cmps+'</div></div>' +
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Total API Calls</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+(gens+cmps)+'</div></div>' +
+    '</div><p style="font-size:11px;color:var(--stone);margin-top:12px;">'+N+' model'+(N!==1?'s':'')+' × '+M+' prompt'+(M!==1?'s':'')+' + N×(N-1)/2 pairs × '+R+' judge run'+(R!==1?'s':'')+'. All requests run in parallel.</p>';
+}
+
+async function saveAndRun() {
+  const name = document.getElementById('bench-name').value.trim() || 'Benchmark '+new Date().toLocaleDateString();
+  cfg.name = name;
+  cfg.generation.max_tokens = parseInt(document.getElementById('gen-max-tokens').value)||4096;
+  cfg.generation.temperature = parseFloat(document.getElementById('gen-temp').value)||0.7;
+  cfg.judge.runs = parseInt(document.getElementById('judge-runs').value)||1;
+  if (!cfg.models.length) { toast('Add at least one model','err'); showStep(0); return; }
+  if (!cfg.prompts.length) { toast('Add at least one prompt','err'); showStep(1); return; }
+  if (!cfg.judge.model) { toast('Select a judge model','err'); showStep(2); return; }
+  let runId;
+  if (editRunId) {
+    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    runId = editRunId;
+  } else {
+    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    const d = await res.json(); runId = d.id;
+  }
+  await fetch('/api/runs/'+runId+'/start', {method:'POST'});
+  openLiveRun(runId);
+}
+
+async function saveDraft() {
+  const name = document.getElementById('bench-name').value.trim() || 'Draft '+new Date().toLocaleDateString();
+  cfg.name = name;
+  if (editRunId) {
+    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+  } else {
+    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    const d = await res.json(); editRunId = d.id;
+  }
+  toast('Draft saved'); loadRuns();
+}
+
+// Model search
+async function initModelSearch() {
+  modelOffset=0; modelQ='';
+  const res = await fetch('/api/models?limit=30&offset=0');
+  const d = await res.json();
+  allModels = d.models;
+  renderModelOpts(d.models, d.total>30);
+}
+async function searchModels(q) {
+  modelQ=q; modelOffset=0;
+  document.getElementById('model-dd').style.display='block';
+  const res = await fetch('/api/models?q='+encodeURIComponent(q)+'&limit=30&offset=0');
+  const d = await res.json();
+  allModels = d.models;
+  renderModelOpts(d.models, d.total>30);
+}
+function showModelDD() {
+  document.getElementById('model-dd').style.display='block';
+  if (!allModels.length) initModelSearch();
+}
+async function loadMoreModels() {
+  modelOffset += 30;
+  const res = await fetch('/api/models?q='+encodeURIComponent(modelQ)+'&limit=30&offset='+modelOffset);
+  const d = await res.json();
+  allModels = [...allModels, ...d.models];
+  renderModelOpts(allModels, (modelOffset+30)<d.total);
+}
+function renderModelOpts(models, hasMore) {
+  const selIds = cfg.models.map(m => m.id||m);
+  document.getElementById('model-options').innerHTML = models.map(m =>
+    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(\''+esc(m.id)+'\')">'+
+    '<div><div class="model-option-id">'+esc(m.id)+'</div>'+(m.name&&m.name!==m.id?'<div style="font-size:10px;color:var(--stone);">'+esc(trunc(m.name,40))+'</div>':'')+
+    '</div><div class="model-option-meta">'+(m.context_length?Math.round(m.context_length/1000)+'k ctx':'')+'</div></div>'
+  ).join('');
+  const lm = document.getElementById('model-load-more');
+  lm.style.display = hasMore ? 'block' : 'none';
+}
+function toggleModel(id) {
+  const idx = cfg.models.findIndex(m => (m.id||m)===id);
+  if (idx>=0) cfg.models.splice(idx,1);
+  else cfg.models.push({id,reasoning_effort:null});
+  renderSelModels();
+  const lm = document.getElementById('model-load-more');
+  renderModelOpts(allModels, lm.style.display!=='none');
+  updateSum();
+}
+function renderSelModels() {
+  const el = document.getElementById('sel-models');
+  if (!cfg.models.length) { el.innerHTML = '<p style="font-size:12px;color:var(--stone);">No models selected.</p>'; return; }
+  el.innerHTML = cfg.models.map((m,i) => {
+    const id = m.id||m;
+    return '<div class="sel-model-row">'+
+      '<span class="sel-model-id">'+esc(id)+'</span>'+
+      '<select class="reasoning-sel" onchange="cfg.models['+i+'].reasoning_effort=this.value||null" title="Reasoning effort">'+
+      '<option value=""'+((!m.reasoning_effort)?' selected':'')+'>Default</option>'+
+      '<option value="low"'+(m.reasoning_effort==='low'?' selected':'')+'>Low</option>'+
+      '<option value="medium"'+(m.reasoning_effort==='medium'?' selected':'')+'>Medium</option>'+
+      '<option value="high"'+(m.reasoning_effort==='high'?' selected':'')+'>High</option>'+
+      '</select><button class="rm-btn" onclick="cfg.models.splice('+i+',1);renderSelModels();updateSum()">×</button></div>';
+  }).join('');
+}
+
+// Judge model search
+async function searchJudge(q) {
+  document.getElementById('judge-dd').style.display='block';
+  const res = await fetch('/api/models?q='+encodeURIComponent(q)+'&limit=20&offset=0');
+  const d = await res.json();
+  document.getElementById('judge-options').innerHTML = d.models.map(m =>
+    '<div class="model-option" onclick="selectJudge(\''+esc(m.id)+'\')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
+  ).join('');
+}
+function showJudgeDD() {
+  document.getElementById('judge-dd').style.display='block';
+  if (!document.getElementById('judge-options').children.length) searchJudge('');
+}
+function selectJudge(id) {
+  cfg.judge.model = id;
+  document.getElementById('judge-search').value = id;
+  document.getElementById('judge-sel').textContent = '✓ Judge: '+id;
+  document.getElementById('judge-dd').style.display='none';
+  updateSum();
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#model-search') && !e.target.closest('#model-dd')) { const d=document.getElementById('model-dd'); if(d) d.style.display='none'; }
+  if (!e.target.closest('#judge-search') && !e.target.closest('#judge-dd')) { const d=document.getElementById('judge-dd'); if(d) d.style.display='none'; }
+});
+
+// Prompts
+function renderPromptList() {
+  const el = document.getElementById('prompt-list');
+  const cats = ['illustration','logo','icon','data-visualization','abstract','typography','scene'];
+  el.innerHTML = cfg.prompts.map((p,i) =>
+    '<div class="prompt-row">'+
+    '<input type="text" class="prompt-text-input" value="'+esc(p.text||'')+'" placeholder="Describe the SVG..." onchange="cfg.prompts['+i+'].text=this.value">'+
+    '<select class="prompt-cat" onchange="cfg.prompts['+i+'].category=this.value">'+cats.map(c=>'<option value="'+c+'"'+(p.category===c?' selected':'')+'>'+c+'</option>').join('')+'</select>'+
+    '<button class="rm-btn" onclick="cfg.prompts.splice('+i+',1);renderPromptList()">×</button></div>'
+  ).join('');
+  updateSum();
+}
+function addPromptRow() {
+  cfg.prompts.push({id:crypto.randomUUID(),text:'',category:'illustration'});
+  renderPromptList();
+  const rows = document.querySelectorAll('.prompt-row');
+  if(rows.length) rows[rows.length-1].querySelector('input').focus();
+}
+function clearPrompts() { cfg.prompts=[]; renderPromptList(); }
+async function loadDefaultPrompts() {
+  const res = await fetch('/api/default-prompts');
+  cfg.prompts = await res.json();
+  renderPromptList();
+}
+async function generatePrompts() {
+  const desc = document.getElementById('ai-gen-desc').value.trim();
+  const count = parseInt(document.getElementById('ai-gen-count').value)||8;
+  if (!desc) { toast('Enter a description','err'); return; }
+  const btn = document.getElementById('ai-gen-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    const res = await fetch('/api/generate-prompts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,count,existing:cfg.prompts})});
+    const d = await res.json();
+    if(d.error) throw new Error(d.error);
+    cfg.prompts = [...cfg.prompts, ...d.prompts];
+    renderPromptList(); toast('Added '+d.prompts.length+' prompts');
+  } catch(err) { toast('Failed: '+err.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Generate'; }
+}
+
+function toggleAdv(id,btn) {
+  document.getElementById(id).classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+// LIVE RUN
+function openLiveRun(id) {
+  currentRunId=id;
+  runStats={genDone:0,genTotal:0,cmpDone:0,cmpTotal:0,errors:0};
+  runStart=Date.now();
+  document.getElementById('ev-feed').innerHTML='';
+  document.getElementById('svg-grid').innerHTML='';
+  document.getElementById('svg-count').textContent='0 rendered';
+  document.getElementById('st-gen-done').textContent='0';
+  document.getElementById('st-cmp-done').textContent='0';
+  document.getElementById('st-errors').textContent='0';
+  document.getElementById('st-elapsed').textContent='0:00';
+  document.getElementById('run-pbar').style.width='0%';
+  document.getElementById('btn-view-results').style.display='none';
+  document.getElementById('btn-stop').style.display='';
+  showPage('run');
+  loadRunMeta(id);
+  connectSSE(id);
+  clearInterval(elapsedTmr);
+  elapsedTmr = setInterval(() => { document.getElementById('st-elapsed').textContent=fmt(Date.now()-runStart); }, 1000);
+}
+
+async function loadRunMeta(id) {
+  const res = await fetch('/api/runs/'+id);
+  const run = await res.json();
+  document.getElementById('run-title').textContent = run.name;
+  document.getElementById('run-status').innerHTML = '<span class="s-'+run.status+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+run.status+'</span>';
+  document.getElementById('btn-export').href='/api/runs/'+id+'/export/json';
+  document.getElementById('btn-export').download='pathscore-'+id.slice(0,8)+'.json';
+  const N=run.config.models.length, M=run.config.prompts.length, R=run.config.judge?.runs||1;
+  runStats.genTotal=N*M;
+  runStats.cmpTotal=M*N*(N-1)/2*R;
+  document.getElementById('st-gen-total').textContent='of '+runStats.genTotal+' total';
+  document.getElementById('st-cmp-total').textContent='of '+runStats.cmpTotal+' total';
+  if(run.status==='complete') {
+    clearInterval(elapsedTmr);
+    document.getElementById('btn-view-results').style.display='';
+    document.getElementById('btn-stop').style.display='none';
+    if(run.started_at) runStart=run.started_at;
+  }
+}
+
+function connectSSE(id) {
+  if(sseConn) sseConn.close();
+  const es = new EventSource('/api/runs/'+id+'/events');
+  sseConn = es;
+  const h = {
+    run_start: d => { addEv('🚀 Run started', sm(d.modelIds?.[0]||'')+' +'+((d.modelIds?.length||1)-1)+' more × '+d.promptCount+' prompts', '', ''); setStatus('running'); },
+    generation_start: d => addEv('⚙ Generating', esc(sm(d.modelId)), esc(trunc('"'+d.promptText+'"',50)), 'ev-gen-start'),
+    generation_complete: d => { runStats.genDone++; updateStats(); addEv('✓ SVG ready', esc(sm(d.modelId))+' — '+d.timeMs+'ms', esc(trunc('"'+d.promptText+'"',40)), 'ev-gen-ok'); addThumb(d.genId, d.modelId, d.promptText); },
+    generation_error: d => { runStats.errors++; updateStats(); addEv('✗ Failed', esc(sm(d.modelId))+': '+esc(trunc(d.error,60)), '', 'ev-gen-err'); },
+    comparison_start: d => addEv('⚖ Judging', esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), esc(trunc('"'+d.promptText+'"',40)), 'ev-cmp-start'),
+    comparison_complete: d => {
+      runStats.cmpDone++; updateStats();
+      const wb = d.winner==='A'?'<span class="wb wb-a">A wins</span>':d.winner==='B'?'<span class="wb wb-b">B wins</span>':'<span class="wb wb-tie">tie</span>';
+      const sc = d.scoreA!=null?' ('+d.scoreA+'–'+d.scoreB+')':'';
+      addEv('⚖ '+esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), wb+sc, esc(trunc(d.thoughtProcess||'',80)), 'ev-cmp-ok');
+    },
+    comparison_error: d => { runStats.errors++; updateStats(); addEv('✗ Judge failed', esc(trunc(d.error,80)), '', 'ev-cmp-err'); },
+    run_complete: () => { clearInterval(elapsedTmr); setStatus('complete'); addEv('✅ Complete','All done!','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
+    run_error: d => { clearInterval(elapsedTmr); setStatus('error'); addEv('❌ Error', esc(d.error),'','ev-gen-err'); },
+    run_stopped: () => { clearInterval(elapsedTmr); setStatus('stopped'); addEv('⏹ Stopped','Run was stopped manually','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
+  };
+  Object.entries(h).forEach(([t,fn]) => es.addEventListener(t, e => { try { fn(JSON.parse(e.data)); } catch(_){} }));
+  es.onerror = () => {};
+}
+
+function setStatus(s) {
+  document.getElementById('run-status').innerHTML='<span class="s-'+s+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+s+'</span>';
+}
+function updateStats() {
+  document.getElementById('st-gen-done').textContent=runStats.genDone;
+  document.getElementById('st-cmp-done').textContent=runStats.cmpDone;
+  document.getElementById('st-errors').textContent=runStats.errors;
+  const total=runStats.genTotal+runStats.cmpTotal, done=runStats.genDone+runStats.cmpDone;
+  document.getElementById('run-pbar').style.width=total>0?(done/total*100)+'%':'0%';
+}
+
+let evCount=0;
+function addEv(title, sub, detail, cls) {
+  evCount++;
+  const feed=document.getElementById('ev-feed');
+  const el=document.createElement('div');
+  el.className='event-item '+(cls||'');
+  el.innerHTML='<div class="ev-header"><span class="ev-title">'+title+'</span><span class="ev-time">'+new Date().toLocaleTimeString()+'</span></div>'+(sub?'<div class="ev-meta">'+sub+'</div>':'')+(detail?'<div style="font-size:11px;color:var(--stone);margin-top:2px;">'+detail+'</div>':'');
+  feed.insertBefore(el,feed.firstChild);
+  while(feed.children.length>200) feed.removeChild(feed.lastChild);
+}
+
+let thumbCount=0;
+function addThumb(genId, modelId, promptText) {
+  thumbCount++;
+  document.getElementById('svg-count').textContent=thumbCount+' rendered';
+  const grid=document.getElementById('svg-grid');
+  const el=document.createElement('div');
+  el.className='svg-thumb';
+  const safeId=esc(genId), safeModel=esc(modelId), safePrompt=esc(trunc(promptText,40));
+  el.setAttribute('onclick','showSVGModal("'+genId+'","'+esc(modelId)+'","'+esc(promptText)+'")');
+  el.innerHTML='<div class="svg-thumb-img"><img src="/api/generations/'+safeId+'/svg" loading="lazy" alt=""></div><div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(modelId))+'</div><div class="svg-thumb-prompt">'+safePrompt+'</div></div>';
+  grid.insertBefore(el,grid.firstChild);
+}
+
+async function showSVGModal(genId, modelId, promptText) {
+  document.getElementById('modal-model').textContent = sm(modelId);
+  document.getElementById('modal-prompt').textContent = promptText;
+  document.getElementById('modal-img').innerHTML = '<img src="/api/generations/'+esc(genId)+'/svg" style="max-width:100%;max-height:400px;display:block;margin:0 auto;" alt="">';
+  document.getElementById('modal-code').style.display='none';
+  document.getElementById('modal-dl').href='/api/generations/'+esc(genId)+'/svg';
+  document.getElementById('modal-dl').download='pathscore-'+genId.slice(0,8)+'.svg';
+  const res = await fetch('/api/generations/'+genId+'/svg');
+  document.getElementById('modal-code').textContent = await res.text();
+  document.getElementById('svg-modal').classList.add('open');
+}
+
+async function stopRun() {
+  await fetch('/api/runs/'+currentRunId+'/stop',{method:'POST'});
+  toast('Stop signal sent');
+}
+
+// RESULTS
+function viewResults(id) {
+  currentRunId=id; showPage('results'); loadResults(id);
+}
+async function loadResults(id) {
+  document.getElementById('res-title').textContent='Loading...';
+  const res = await fetch('/api/runs/'+id+'/results');
+  resultsData = await res.json();
+  allCmps = resultsData.comparisons||[];
+  document.getElementById('res-title').textContent = resultsData.run.name;
+  document.getElementById('res-sub').textContent = resultsData.models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+allCmps.filter(c=>c.status==='complete').length+' comparisons';
+  document.getElementById('export-bar').dataset.runId = id;
+  renderLB(); renderHM(); filterCmps(''); renderOutputs(); populateOutFilters();
+}
+
+function renderLB() {
+  const lb=resultsData.leaderboard, maxElo=Math.max(...lb.map(r=>r.elo));
+  document.getElementById('lb-body').innerHTML = lb.map((row,i) => {
+    const rank=i+1, rc=rank<=3?'r'+rank:'', pct=maxElo>0?(row.elo/maxElo*100):50;
+    const wr=row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'—';
+    return '<tr><td><span class="rank '+rc+'">'+rank+'</span></td>' +
+      '<td style="font-family:var(--font-b);font-size:12px;">'+esc(row.model)+'</td>' +
+      '<td><div class="elo-bar-row"><div class="elo-bar"><div class="elo-bar-fill" style="width:'+pct+'%;background:'+(rank===1?'var(--ember)':'var(--ink)')+'"></div></div><div class="elo-num">'+row.elo+'</div></div></td>' +
+      '<td style="font-size:12px;color:var(--stone);">'+wr+'</td>' +
+      '<td style="font-size:12px;color:var(--stone);"><strong>'+row.wins+'</strong> / '+row.losses+' / '+row.ties+'</td>' +
+      '<td style="font-size:12px;color:var(--stone);">'+(row.avgScore??'—')+'</td></tr>';
+  }).join('');
+}
+
+function renderHM() {
+  const models=resultsData.models, hm=resultsData.heatmap;
+  const cols=models.map(m=>'<th title="'+esc(m)+'">'+esc(trunc(sm(m),12))+'</th>').join('');
+  const rows=models.map(rm => {
+    const cells=models.map(cm => {
+      if(rm===cm) return '<td><div class="hm-cell hm-na">N/A</div></td>';
+      const v=hm[rm]?.[cm];
+      if(v===null||v===undefined) return '<td><div class="hm-cell" style="background:#f9f9f9;color:var(--stone);">—</div></td>';
+      const r=Math.round(232*v+76*(1-v)), g=Math.round(77*v+175*(1-v)), b=Math.round(47*v+74*(1-v));
+      return '<td><div class="hm-cell" style="background:rgb('+r+','+g+','+b+');color:white;">'+(v*100).toFixed(0)+'%</div></td>';
+    }).join('');
+    return '<tr><td class="hm-row-lbl" title="'+esc(rm)+'">'+esc(trunc(sm(rm),12))+'</td>'+cells+'</tr>';
+  }).join('');
+  document.getElementById('hm-wrap').innerHTML='<table class="hm-table"><thead><tr><th></th>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function filterCmps(text) {
+  const ft=text.toLowerCase(), wf=document.getElementById('cmp-wf').value;
+  window._fCmps = allCmps.filter(c => {
+    if(c.status!=='complete') return false;
+    if(wf && c.winner!==wf) return false;
+    if(ft && !c.model_a_id.toLowerCase().includes(ft) && !c.model_b_id.toLowerCase().includes(ft) && !c.prompt_text.toLowerCase().includes(ft)) return false;
+    return true;
+  });
+  cmpPage=0; renderCmpPage();
+}
+
+function renderCmpPage() {
+  const filtered=window._fCmps||[], slice=filtered.slice(0,(cmpPage+1)*CMP_PS);
+  document.getElementById('cmp-grid').innerHTML = slice.map(c => {
+    const wb=c.winner==='A'?'<span class="wb wb-a">A wins ('+c.model_a_score+'/10)</span>':c.winner==='B'?'<span class="wb wb-b">B wins ('+c.model_b_score+'/10)</span>':'<span class="wb wb-tie">Tie</span>';
+    const safeA=esc(c.generation_a_id), safeB=esc(c.generation_b_id);
+    return '<div class="cmp-card">'+
+      '<div class="cmp-card-hdr"><span class="cmp-prompt">"'+esc(trunc(c.prompt_text,50))+'"</span>'+wb+'</div>'+
+      '<div class="cmp-images">'+
+      '<div class="cmp-img-slot"><div class="label">Model A '+(c.winner==='A'?'🏆':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeA+'\',\''+esc(c.model_a_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeA+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_a_id))+'</div></div>'+
+      '<div class="cmp-img-slot"><div class="label">Model B '+(c.winner==='B'?'🏆':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeB+'\',\''+esc(c.model_b_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeB+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_b_id))+'</div></div>'+
+      '</div>'+(c.thought_process?'<div class="cmp-card-ftr">'+esc(trunc(c.thought_process,120))+'</div>':'')+
+      '</div>';
+  }).join('');
+  const more=document.getElementById('cmp-more');
+  if(filtered.length>slice.length) {
+    more.innerHTML='<button class="btn btn-outline btn-sm" onclick="cmpPage++;renderCmpPage()">Load more ('+( filtered.length-slice.length)+' remaining)</button>';
+  } else {
+    more.innerHTML='<span style="font-size:12px;color:var(--stone);">'+filtered.length+' comparison'+(filtered.length!==1?'s':'')+' shown</span>';
+  }
+}
+
+function populateOutFilters() {
+  const mf=document.getElementById('out-mf'), pf=document.getElementById('out-pf');
+  mf.innerHTML='<option value="">All models</option>'+resultsData.models.map(m=>'<option value="'+esc(m)+'">'+esc(sm(m))+'</option>').join('');
+  const prompts=[...new Set(resultsData.generations.map(g=>g.prompt_text))];
+  pf.innerHTML='<option value="">All prompts</option>'+prompts.map(p=>'<option value="'+esc(p)+'">'+esc(trunc(p,50))+'</option>').join('');
+}
+
+function renderOutputs() {
+  const mf=document.getElementById('out-mf').value, pf=document.getElementById('out-pf').value;
+  const gens=resultsData.generations.filter(g => g.status==='complete' && (!mf||g.model_id===mf) && (!pf||g.prompt_text===pf));
+  document.getElementById('out-grid').innerHTML=gens.map(g =>
+    '<div class="svg-thumb" onclick="showSVGModal(\''+esc(g.id)+'\',\''+esc(g.model_id)+'\',\''+esc(g.prompt_text)+'\')">'+
+    '<div class="svg-thumb-img"><img src="/api/generations/'+esc(g.id)+'/svg" loading="lazy" alt=""></div>'+
+    '<div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(g.model_id))+'</div><div class="svg-thumb-prompt">'+esc(trunc(g.prompt_text,40))+'</div></div></div>'
+  ).join('');
+}
+
+// Export
+function exportJSON() { window.open('/api/runs/'+(document.getElementById('export-bar').dataset.runId||currentRunId)+'/export/json','_blank'); }
+function exportHTML() {
+  if(!resultsData) return;
+  const lb=resultsData.leaderboard.map((row,i)=>'<tr><td>'+(i+1)+'</td><td>'+row.model+'</td><td>'+row.elo+'</td><td>'+(row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'—')+'</td><td>'+row.wins+'/'+row.losses+'/'+row.ties+'</td><td>'+(row.avgScore??'—')+'</td></tr>').join('');
+  const models=resultsData.models, hm=resultsData.heatmap;
+  const hmCols=models.map(m=>'<th>'+sm(m)+'</th>').join('');
+  const hmRows=models.map(rm=>'<tr><th>'+sm(rm)+'</th>'+models.map(cm=>{if(rm===cm) return '<td style="background:#f5f5f5;">N/A</td>';const v=hm[rm]?.[cm];if(v==null) return '<td>—</td>';const bg=v>.5?'rgba(232,77,47,'+v+')':'rgba(76,175,74,'+(1-v)+')';return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';}).join('')+'</tr>').join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results — '+resultsData.run.name+'</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Syne",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Syne",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}</style></head>'+
+    '<body><div style="font-size:11px;color:#999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">PathScore</div>'+
+    '<h1>'+resultsData.run.name+'</h1><p style="color:#999;margin-bottom:48px">'+models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+new Date(resultsData.run.created_at).toLocaleDateString()+'</p>'+
+    '<h2>ELO Leaderboard</h2><table><thead><tr><th>#</th><th>Model</th><th>ELO</th><th>Win Rate</th><th>W/L/T</th><th>Avg Score</th></tr></thead><tbody>'+lb+'</tbody></table>'+
+    '<h2>Win Rate Heatmap</h2><table style="width:auto"><thead><tr><th></th>'+hmCols+'</tr></thead><tbody>'+hmRows+'</tbody></table>'+
+    '<p style="font-size:11px;color:#999;margin-top:64px">Generated by PathScore on '+new Date().toLocaleString()+'</p></body></html>';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download='pathscore-'+resultsData.run.id.slice(0,8)+'.html';
+  a.click();
+}
+
+// Import
+async function importResults(e) {
+  const file=e.target.files[0]; if(!file) return;
+  try {
+    const data=JSON.parse(await file.text());
+    const res=await fetch('/api/runs/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const r=await res.json();
+    if(r.error) throw new Error(r.error);
+    toast('Imported successfully'); loadRuns();
+  } catch(err) { toast('Import failed: '+err.message,'err'); }
+}
+
+// Tabs
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// Init
+loadRuns();
+</script>
+</body>
+</html>

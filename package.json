@@ -1,0 +1,16 @@
+{
+  "name": "pathscore",
+  "version": "1.0.0",
+  "description": "SVG generation benchmark for open-source LLMs via OpenRouter",
+  "main": "server.cjs",
+  "scripts": {
+    "start": "node server.cjs",
+    "dev": "node server.cjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "uuid": "^9.0.0"
+  }
+}
