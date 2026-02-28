@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PathScore — SVG Generation Benchmark</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0a0a'/><circle cx='16' cy='16' r='6' fill='none' stroke='%23e84d2f' stroke-width='2.5'/><line x1='16' y1='4' x2='16' y2='10' stroke='%23e84d2f' stroke-width='2.5'/><line x1='16' y1='22' x2='16' y2='28' stroke='%23e84d2f' stroke-width='2.5'/><line x1='4' y1='16' x2='10' y2='16' stroke='%23e84d2f' stroke-width='2.5'/><line x1='22' y1='16' x2='28' y2='16' stroke='%23e84d2f' stroke-width='2.5'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0a0a0a;--ember:#e84d2f;--white:#ffffff;--mist:#f5f5f5;--stone:#999999;--border:#e8e8e8;--font-h:'Syne',sans-serif;--font-b:'IBM Plex Mono',monospace;}
+:root{--ink:#0a0a0a;--ember:#e84d2f;--white:#ffffff;--mist:#f5f5f5;--stone:#999999;--border:#e8e8e8;--font-h:'Outfit',sans-serif;--font-b:'IBM Plex Mono',monospace;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font-b);background:var(--white);color:var(--ink);font-size:14px;line-height:1.6;}
 a{color:inherit;text-decoration:none;}
@@ -21,7 +22,7 @@ a{color:inherit;text-decoration:none;}
 .main{flex:1;}
 .page{display:none;padding:48px 32px;max-width:1200px;margin:0 auto;}
 .page.active{display:block;}
-h1{font-family:var(--font-h);font-weight:800;font-size:36px;letter-spacing:-0.03em;line-height:1.1;}
+h1{font-family:var(--font-h);font-weight:800;font-size:32px;letter-spacing:-0.03em;line-height:1.1;}
 h2{font-family:var(--font-h);font-weight:700;font-size:22px;letter-spacing:-0.02em;}
 h3{font-family:var(--font-h);font-weight:600;font-size:16px;}
 .stone{color:var(--stone);}
@@ -51,8 +52,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .pbar{height:3px;background:var(--mist);border-radius:2px;overflow:hidden;}
 .pbar-fill{height:100%;background:var(--ember);transition:width .3s;border-radius:2px;}
-
-/* HOME */
 .hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:48px;}
 .hero-eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;}
 .hero h1{margin-bottom:16px;}
@@ -66,9 +65,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);}
 .run-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--stone);margin-bottom:6px;}
 .empty-state{padding:64px;text-align:center;color:var(--stone);border:1.5px dashed var(--border);border-radius:6px;}
 .empty-state h3{font-family:var(--font-h);margin-bottom:8px;color:var(--ink);}
-
-/* CONFIGURE */
-.config-layout{display:grid;grid-template-columns:240px 1fr;gap:48px;}
+.config-layout{display:grid;grid-template-columns:200px 1fr;gap:48px;}
 .config-sidebar{position:sticky;top:72px;height:fit-content;}
 .config-steps{display:flex;flex-direction:column;gap:4px;}
 .config-step{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:4px;cursor:pointer;font-size:13px;color:var(--stone);transition:all .15s;}
@@ -89,10 +86,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);}
 .load-more{text-align:center;padding:10px;cursor:pointer;font-size:12px;color:var(--stone);border-top:1px solid var(--border);}
 .load-more:hover{color:var(--ink);}
 .sel-models{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
-.sel-model-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--mist);border-radius:4px;}
-.sel-model-id{font-size:12px;flex:1;word-break:break-all;}
-.reasoning-sel{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:3px;background:white;font-family:var(--font-b);}
-.rm-btn{background:none;border:none;cursor:pointer;color:var(--stone);font-size:18px;padding:0 4px;line-height:1;}
+.sel-model-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--mist);border-radius:4px;min-width:0;}
+.sel-model-id{font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-b);}
+.reasoning-sel{font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:3px;background:white;font-family:var(--font-b);flex-shrink:0;width:90px;}
+.rm-btn{flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--stone);font-size:16px;padding:0 2px;line-height:1;}
 .rm-btn:hover{color:var(--ember);}
 .prompt-list{display:flex;flex-direction:column;gap:8px;}
 .prompt-row{display:flex;align-items:center;gap:8px;}
@@ -109,8 +106,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);}
 .rv{font-size:13px;color:var(--stone);min-width:50px;text-align:right;}
 .ai-gen-box{background:var(--mist);border-radius:6px;padding:16px;margin-top:16px;}
 .ai-gen-row{display:flex;gap:8px;}
-
-/* RUN */
 .run-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
 .stat-box{border:1.5px solid var(--border);border-radius:6px;padding:16px 20px;}
@@ -142,8 +137,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);}
 .svg-thumb-meta{padding:6px 8px;}
 .svg-thumb-model{font-size:10px;color:var(--stone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .svg-thumb-prompt{font-size:10px;color:var(--stone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* RESULTS */
 table.lb{width:100%;}
 table.lb th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);padding:10px 16px;border-bottom:1.5px solid var(--border);font-weight:500;}
 table.lb td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -179,15 +172,11 @@ table.lb tr:hover td{background:var(--mist);}
 .cmp-svg-box img{width:100%;height:100%;object-fit:contain;}
 .cmp-card-ftr{padding:10px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--stone);}
 .outputs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
-
-/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,10,.6);z-index:1000;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
 .modal{background:white;border-radius:6px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;position:relative;}
 .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);}
 .modal-close:hover{color:var(--ink);}
-
-/* ABOUT */
 .about-hero{padding:64px 0 48px;border-bottom:1.5px solid var(--border);margin-bottom:48px;}
 .about-sec{margin-bottom:48px;}
 .about-sec h2{margin-bottom:20px;}
@@ -198,8 +187,6 @@ table.lb tr:hover td{background:var(--mist);}
 .flow-box{background:var(--ink);color:white;padding:10px 20px;border-radius:4px;font-size:12px;white-space:nowrap;}
 .flow-arr{padding:0 12px;color:var(--stone);font-size:18px;}
 .cat-pill{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:12px;background:var(--mist);color:var(--stone);margin:2px;}
-
-/* TOAST */
 .toasts{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px;}
 .toast{background:var(--ink);color:white;padding:12px 20px;border-radius:4px;font-size:13px;animation:toastIn .2s;max-width:360px;}
 .toast.err{background:var(--ember);}
@@ -210,14 +197,46 @@ table.lb tr:hover td{background:var(--mist);}
 ::-webkit-scrollbar-track{background:var(--mist);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--stone);}
-@media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}}
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.mode-card{border:1.5px solid var(--border);border-radius:6px;padding:16px;cursor:pointer;transition:all .15s;}
+.mode-card:hover{border-color:var(--stone);}
+.mode-card.selected{border-color:var(--ember);background:#fff8f7;}
+.mode-card-icon{font-size:20px;margin-bottom:8px;}
+.mode-card-title{font-family:var(--font-h);font-weight:600;font-size:14px;margin-bottom:4px;}
+.mode-card-desc{font-size:11px;color:var(--stone);line-height:1.5;}
+.human-judge-panel{max-width:800px;}
+.human-cmp-card{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:24px;}
+.human-cmp-hdr{padding:14px 20px;background:var(--mist);border-bottom:1px solid var(--border);}
+.human-cmp-images{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.human-img-slot{padding:16px;border-right:1px solid var(--border);}
+.human-img-slot:last-child{border-right:none;}
+.human-cmp-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.score-row{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.score-row label{font-size:11px;color:var(--stone);min-width:60px;}
+.score-row input[type=range]{flex:1;}
+.vote-btns{display:flex;gap:8px;margin-top:16px;}
+.vote-btn{flex:1;padding:12px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;font-family:var(--font-b);font-size:13px;background:white;transition:all .15s;}
+.vote-btn:hover{border-color:var(--ink);}
+.vote-btn.vote-a{border-color:#2196F3;color:#1565C0;}
+.vote-btn.vote-b{border-color:#e91e63;color:#880E4F;}
+.vote-btn.vote-bb{border-color:var(--stone);color:var(--stone);}
+.img-upload-area{border:2px dashed var(--border);border-radius:6px;padding:32px;text-align:center;cursor:pointer;transition:border-color .15s;}
+.img-upload-area:hover{border-color:var(--stone);}
+.img-upload-area.has-image{border-color:var(--ember);padding:8px;}
+.img-thumbnail{max-width:100%;max-height:200px;display:block;margin:0 auto;border-radius:3px;}
+.iter-cmp-card{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.iter-cmp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.iter-cmp-slot{padding:12px;border-right:1px solid var(--border);}
+.iter-cmp-slot:last-child{border-right:none;}
+.both-bad-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;background:#fff0f0;color:var(--ember);border:1px solid var(--ember);}
+@media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}.mode-cards{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="app">
   <nav class="nav">
     <div class="nav-logo" onclick="showPage('home')">
-      <img src="https://v3b.fal.media/files/b/0a904aba/phohUpKoFjUi8SJeTTE7H_u1F8u2cx.png" style="width:22px;height:22px;object-fit:contain;" alt="">
+      <span style="font-size:18px;">&#9678;</span>
       <span class="nav-logo-text">PathScore</span>
       <span class="nav-dot"></span>
     </div>
@@ -249,31 +268,83 @@ table.lb tr:hover td{background:var(--mist);}
     <!-- CONFIGURE -->
     <div id="page-configure" class="page">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
-        <button class="btn btn-ghost btn-sm" onclick="showPage('home')">← Back</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('home')">&#8592; Back</button>
         <h1 id="cfg-title">New Benchmark</h1>
       </div>
       <div class="config-layout">
         <div class="config-sidebar">
           <div class="config-steps">
-            <div class="config-step active" onclick="showStep(0)" data-step="0"><div class="config-step-num">1</div>Models</div>
-            <div class="config-step" onclick="showStep(1)" data-step="1"><div class="config-step-num">2</div>Prompts</div>
-            <div class="config-step" onclick="showStep(2)" data-step="2"><div class="config-step-num">3</div>Judge</div>
-            <div class="config-step" onclick="showStep(3)" data-step="3"><div class="config-step-num">4</div>Settings</div>
+            <div class="config-step active" onclick="showStep(0)" data-step="0"><div class="config-step-num">0</div>Mode</div>
+            <div class="config-step" onclick="showStep(1)" data-step="1"><div class="config-step-num">1</div>Models</div>
+            <div class="config-step" onclick="showStep(2)" data-step="2"><div class="config-step-num">2</div>Prompts</div>
+            <div class="config-step" onclick="showStep(3)" data-step="3"><div class="config-step-num">3</div>Judge</div>
+            <div class="config-step" onclick="showStep(4)" data-step="4"><div class="config-step-num">4</div>Settings</div>
           </div>
           <hr class="divider">
           <div style="font-size:12px;color:var(--stone);line-height:1.8;">
+            <div id="sum-mode">Mode: standard</div>
             <div id="sum-models">0 models</div>
             <div id="sum-prompts">0 prompts</div>
             <div id="sum-judge">No judge set</div>
           </div>
           <hr class="divider">
-          <button class="btn btn-accent" style="width:100%" onclick="saveAndRun()">Run Benchmark →</button>
+          <button class="btn btn-accent" style="width:100%" onclick="saveAndRun()">Run Benchmark &#8594;</button>
           <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="saveDraft()">Save Draft</button>
         </div>
         <div>
-          <!-- Step 0: Models -->
+          <!-- Step 0: Mode -->
           <div class="config-panel active" id="panel-0">
-            <div style="margin-bottom:32px;"><h2>Select Models</h2><p class="stone" style="font-size:13px;margin-top:6px;">Choose OpenRouter models to benchmark. Search by name or ID. Set reasoning effort per-model if supported.</p></div>
+            <div style="margin-bottom:32px;"><h2>Select Mode</h2><p class="stone" style="font-size:13px;margin-top:6px;">Choose how this benchmark will operate.</p></div>
+            <div class="mode-cards">
+              <div class="mode-card selected" id="mode-standard" onclick="selectMode('standard')">
+                <div class="mode-card-icon">&#9654;</div>
+                <div class="mode-card-title">Standard</div>
+                <div class="mode-card-desc">Generate SVGs from prompts, pairwise judge with VLM. Classic ELO ranking.</div>
+              </div>
+              <div class="mode-card" id="mode-feedback_iteration" onclick="selectMode('feedback_iteration')">
+                <div class="mode-card-icon">&#8635;</div>
+                <div class="mode-card-title">Feedback Iteration</div>
+                <div class="mode-card-desc">Standard run + models improve SVGs based on judge feedback. Measures learning ability.</div>
+              </div>
+              <div class="mode-card" id="mode-image_to_svg" onclick="selectMode('image_to_svg')">
+                <div class="mode-card-icon">&#128444;</div>
+                <div class="mode-card-title">Image to SVG</div>
+                <div class="mode-card-desc">Provide a target image — models reproduce it as SVG. Tests accuracy and fidelity.</div>
+              </div>
+              <div class="mode-card" id="mode-svg_editing" onclick="selectMode('svg_editing')">
+                <div class="mode-card-icon">&#9998;</div>
+                <div class="mode-card-title">SVG Editing</div>
+                <div class="mode-card-desc">Give models an existing SVG plus an edit instruction. Tests instruction following.</div>
+              </div>
+              <div class="mode-card" id="mode-human_eval" onclick="selectMode('human_eval')">
+                <div class="mode-card-icon">&#128065;</div>
+                <div class="mode-card-title">Human Evaluation</div>
+                <div class="mode-card-desc">You judge comparisons alongside LLMs. Track human vs AI agreement.</div>
+              </div>
+            </div>
+            <!-- Feedback iteration extra config -->
+            <div id="iter-model-section" style="display:none;margin-top:24px;">
+              <h3 style="margin-bottom:8px;">Iteration Models</h3>
+              <p style="font-size:12px;color:var(--stone);margin-bottom:12px;">These models will generate improved SVGs based on feedback. Leave empty to reuse main models.</p>
+              <div class="model-search-wrap">
+                <svg class="model-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="model-search-input" id="iter-model-search" placeholder="Search iteration models..." oninput="searchIterModels(this.value)" onfocus="showIterModelDD()">
+              </div>
+              <div class="model-dropdown" id="iter-model-dd" style="display:none"><div id="iter-model-options"></div></div>
+              <div id="sel-iter-models" class="sel-models"></div>
+            </div>
+            <!-- Human eval extra config -->
+            <div id="human-eval-section" style="display:none;margin-top:24px;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
+                <input type="checkbox" id="human-llm-judge" checked style="width:auto;">
+                Also run LLM judge alongside human (track agreement)
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 1: Models -->
+          <div class="config-panel" id="panel-1">
+            <div style="margin-bottom:32px;"><h2>Select Models</h2><p class="stone" style="font-size:13px;margin-top:6px;">Choose OpenRouter models to benchmark. Search by name or ID.</p></div>
             <div class="model-search-wrap">
               <svg class="model-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" class="model-search-input" id="model-search" placeholder="Search models..." oninput="searchModels(this.value)" onfocus="showModelDD()">
@@ -295,28 +366,46 @@ table.lb tr:hover td{background:var(--mist);}
             </div>
           </div>
 
-          <!-- Step 1: Prompts -->
-          <div class="config-panel" id="panel-1">
-            <div style="margin-bottom:32px;"><h2>Prompt Dataset</h2><p class="stone" style="font-size:13px;margin-top:6px;">Each model receives every prompt. Results scale as N×(N-1)/2 pairs per prompt.</p></div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;">
-              <button class="btn btn-outline btn-sm" onclick="loadDefaultPrompts()">Load defaults</button>
-              <button class="btn btn-outline btn-sm" onclick="addPromptRow()">+ Add prompt</button>
-              <button class="btn btn-ghost btn-sm" onclick="clearPrompts()" style="margin-left:auto">Clear all</button>
-            </div>
-            <div id="prompt-list" class="prompt-list"></div>
-            <div class="ai-gen-box">
-              <h3 style="font-size:13px;margin-bottom:12px;">AI-Assisted Generation</h3>
-              <p style="font-size:12px;color:var(--stone);margin-bottom:12px;">Describe what you want to test and we'll generate relevant prompts.</p>
-              <div class="ai-gen-row">
-                <input type="text" id="ai-gen-desc" placeholder="e.g. logo design challenges, gradient experiments..." style="flex:1">
-                <input type="number" id="ai-gen-count" value="8" min="1" max="20" style="width:70px">
-                <button class="btn btn-primary btn-sm" onclick="generatePrompts()" id="ai-gen-btn">Generate</button>
+          <!-- Step 2: Prompts -->
+          <div class="config-panel" id="panel-2">
+            <div style="margin-bottom:32px;"><h2>Prompt Dataset</h2><p class="stone" style="font-size:13px;margin-top:6px;">Each model receives every prompt. Results scale as N&#215;(N-1)/2 pairs per prompt.</p></div>
+            <div id="prompt-standard-section">
+              <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <button class="btn btn-outline btn-sm" onclick="loadDefaultPrompts()">Load defaults</button>
+                <button class="btn btn-outline btn-sm" onclick="addPromptRow()">+ Add prompt</button>
+                <button class="btn btn-ghost btn-sm" onclick="clearPrompts()" style="margin-left:auto">Clear all</button>
               </div>
+              <div id="prompt-list" class="prompt-list"></div>
+              <div class="ai-gen-box">
+                <h3 style="font-size:13px;margin-bottom:12px;">AI-Assisted Generation</h3>
+                <p style="font-size:12px;color:var(--stone);margin-bottom:12px;">Describe what you want to test and we will generate relevant prompts.</p>
+                <div class="ai-gen-row">
+                  <input type="text" id="ai-gen-desc" placeholder="e.g. logo design challenges..." style="flex:1">
+                  <input type="number" id="ai-gen-count" value="8" min="1" max="20" style="width:70px">
+                  <button class="btn btn-primary btn-sm" onclick="generatePrompts()" id="ai-gen-btn">Generate</button>
+                </div>
+              </div>
+            </div>
+            <!-- Image to SVG prompts -->
+            <div id="prompt-image-section" style="display:none;">
+              <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <button class="btn btn-outline btn-sm" onclick="addImagePromptRow()">+ Add image prompt</button>
+                <button class="btn btn-ghost btn-sm" onclick="clearPrompts()" style="margin-left:auto">Clear all</button>
+              </div>
+              <div id="image-prompt-list" class="prompt-list"></div>
+            </div>
+            <!-- SVG Editing prompts -->
+            <div id="prompt-editing-section" style="display:none;">
+              <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <button class="btn btn-outline btn-sm" onclick="addEditPromptRow()">+ Add edit task</button>
+                <button class="btn btn-ghost btn-sm" onclick="clearPrompts()" style="margin-left:auto">Clear all</button>
+              </div>
+              <div id="edit-prompt-list" class="prompt-list"></div>
             </div>
           </div>
 
-          <!-- Step 2: Judge -->
-          <div class="config-panel" id="panel-2">
+          <!-- Step 3: Judge -->
+          <div class="config-panel" id="panel-3">
             <div style="margin-bottom:32px;"><h2>Judge Configuration</h2><p class="stone" style="font-size:13px;margin-top:6px;">Select a vision-capable model to evaluate pairwise SVG comparisons.</p></div>
             <div class="field">
               <label class="label">Judge Model</label>
@@ -327,15 +416,6 @@ table.lb tr:hover td{background:var(--mist);}
               <div class="model-dropdown" id="judge-dd" style="display:none"><div id="judge-options"></div></div>
               <div id="judge-sel" style="margin-top:8px;font-size:12px;color:var(--stone);"></div>
             </div>
-            <div style="background:var(--mist);border-radius:6px;padding:16px;margin-bottom:20px;">
-              <div style="display:flex;align-items:flex-start;gap:10px;">
-                <img src="https://v3b.fal.media/files/b/0a904aba/ZsKzgeuI87WgKT69VO7xe_Su5oy48B.png" style="width:28px;height:28px;opacity:.7;" alt="">
-                <div>
-                  <div style="font-size:12px;font-weight:500;margin-bottom:4px;">How judging works</div>
-                  <div style="font-size:11px;color:var(--stone);line-height:1.6;">Both SVGs are encoded as images and sent to the judge VLM. It evaluates prompt adherence and visual quality, returning a winner (A/B/tie) and 0–10 scores for each.</div>
-                </div>
-              </div>
-            </div>
             <button class="adv-toggle" onclick="toggleAdv('adv-judge',this)">
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
               Advanced judge settings
@@ -343,16 +423,15 @@ table.lb tr:hover td{background:var(--mist);}
             <div class="adv-section" id="adv-judge">
               <div class="field">
                 <label class="label">Judge Runs Per Pair</label>
-                <p style="font-size:11px;color:var(--stone);margin-bottom:8px;">Run judge multiple times to reduce variance. Each extra run multiplies comparison API cost.</p>
                 <div class="rr"><input type="range" id="judge-runs" min="1" max="5" step="1" value="1" oninput="document.getElementById('judge-runs-v').textContent=this.value+(this.value>1?' runs':' run')"><span class="rv" id="judge-runs-v">1 run</span></div>
               </div>
             </div>
           </div>
 
-          <!-- Step 3: Settings -->
-          <div class="config-panel" id="panel-3">
+          <!-- Step 4: Settings -->
+          <div class="config-panel" id="panel-4">
             <div style="margin-bottom:32px;"><h2>Benchmark Settings</h2></div>
-            <div class="field"><label class="label">Benchmark Name</label><input type="text" id="bench-name" placeholder="e.g. Small models — Feb 2026"></div>
+            <div class="field"><label class="label">Benchmark Name</label><input type="text" id="bench-name" placeholder="e.g. Small models - Feb 2026"></div>
             <hr class="divider">
             <div id="bench-estimate" style="background:var(--mist);border-radius:6px;padding:20px;"></div>
           </div>
@@ -364,19 +443,19 @@ table.lb tr:hover td{background:var(--mist);}
     <div id="page-run" class="page">
       <div class="run-header">
         <div>
-          <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:8px">← Back</button>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:8px">&#8592; Back</button>
           <h2 id="run-title">Running...</h2>
           <div id="run-status" style="margin-top:6px;font-size:12px;display:flex;align-items:center;gap:6px;"></div>
         </div>
         <div style="display:flex;gap:10px;">
-          <button class="btn btn-primary btn-sm" onclick="viewResults(currentRunId)" id="btn-view-results" style="display:none">View Results →</button>
+          <button class="btn btn-primary btn-sm" onclick="viewResults(currentRunId)" id="btn-view-results" style="display:none">View Results &#8594;</button>
           <button class="btn btn-outline btn-sm" id="btn-stop" onclick="stopRun()">Stop</button>
           <a id="btn-export" class="btn btn-outline btn-sm" href="#">Export JSON</a>
         </div>
       </div>
       <div class="stats-row">
-        <div class="stat-box"><div class="stat-label">Generations</div><div class="stat-val" id="st-gen-done">0</div><div class="stat-sub" id="st-gen-total">of — total</div></div>
-        <div class="stat-box"><div class="stat-label">Comparisons</div><div class="stat-val" id="st-cmp-done">0</div><div class="stat-sub" id="st-cmp-total">of — total</div></div>
+        <div class="stat-box"><div class="stat-label">Generations</div><div class="stat-val" id="st-gen-done">0</div><div class="stat-sub" id="st-gen-total">of -- total</div></div>
+        <div class="stat-box"><div class="stat-label">Comparisons</div><div class="stat-val" id="st-cmp-done">0</div><div class="stat-sub" id="st-cmp-total">of -- total</div></div>
         <div class="stat-box"><div class="stat-label">Errors</div><div class="stat-val" id="st-errors" style="color:var(--ember)">0</div><div class="stat-sub">gen + judge</div></div>
         <div class="stat-box"><div class="stat-label">Elapsed</div><div class="stat-val" id="st-elapsed">0:00</div><div class="stat-sub">mm:ss</div></div>
       </div>
@@ -401,7 +480,7 @@ table.lb tr:hover td{background:var(--mist);}
 
     <!-- RESULTS -->
     <div id="page-results" class="page">
-      <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:16px">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('home')" style="margin-bottom:16px">&#8592; Back</button>
       <h1 id="res-title">Results</h1>
       <p id="res-sub" class="stone" style="margin-top:8px;font-size:13px;margin-bottom:32px;"></p>
       <div class="export-bar" id="export-bar">
@@ -410,17 +489,20 @@ table.lb tr:hover td{background:var(--mist);}
         <button class="btn btn-outline btn-sm" onclick="exportHTML()">HTML report</button>
         <button class="btn btn-outline btn-sm" onclick="window.print()">PDF (print)</button>
       </div>
-      <div class="tabs">
+      <div class="tabs" id="result-tabs">
         <div class="tab active" onclick="switchTab('lb',this)">ELO Leaderboard</div>
         <div class="tab" onclick="switchTab('hm',this)">Win Rate Heatmap</div>
         <div class="tab" onclick="switchTab('cmps',this)">Comparisons</div>
         <div class="tab" onclick="switchTab('out',this)">All Outputs</div>
+        <div class="tab" id="tab-iter-btn" style="display:none" onclick="switchTab('iter',this)">Iteration Results</div>
+        <div class="tab" id="tab-agree-btn" style="display:none" onclick="switchTab('agree',this)">Judge Agreement</div>
+        <div class="tab" id="tab-human-btn" style="display:none" onclick="showPage('human-judge')">Human Judge &#8594;</div>
       </div>
       <div class="tab-panel active" id="tab-lb">
         <table class="lb"><thead><tr><th style="width:40px">#</th><th>Model</th><th>ELO Score</th><th>Win Rate</th><th>W / L / T</th><th>Avg Score</th></tr></thead><tbody id="lb-body"></tbody></table>
       </div>
       <div class="tab-panel" id="tab-hm">
-        <p style="font-size:13px;color:var(--stone);margin-bottom:16px;">Row = challenger model (A), column = opponent model (B). Cell = challenger win rate. <span class="ember">Red</span> = high wins, <span style="color:#4CAF50">green</span> = low wins.</p>
+        <p style="font-size:13px;color:var(--stone);margin-bottom:16px;">Row = challenger model (A), column = opponent model (B). Cell = challenger win rate.</p>
         <div class="hm-wrap" id="hm-wrap"></div>
       </div>
       <div class="tab-panel" id="tab-cmps">
@@ -438,6 +520,23 @@ table.lb tr:hover td{background:var(--mist);}
         </div>
         <div class="outputs-grid" id="out-grid"></div>
       </div>
+      <div class="tab-panel" id="tab-iter">
+        <div id="iter-lb-wrap" style="margin-bottom:32px;"></div>
+        <div id="iter-cmp-grid" class="cmp-grid"></div>
+      </div>
+      <div class="tab-panel" id="tab-agree">
+        <div id="agree-wrap"></div>
+      </div>
+    </div>
+
+    <!-- HUMAN JUDGE PAGE -->
+    <div id="page-human-judge" class="page">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('results')">&#8592; Back to Results</button>
+        <h2>Human Evaluation</h2>
+        <span id="human-progress" style="font-size:12px;color:var(--stone);margin-left:auto;"></span>
+      </div>
+      <div id="human-judge-container" class="human-judge-panel"></div>
     </div>
 
     <!-- ABOUT -->
@@ -449,34 +548,19 @@ table.lb tr:hover td{background:var(--mist);}
       </div>
       <div class="about-sec"><h2>The pipeline</h2>
         <div class="flow">
-          <div class="flow-box">Prompt Dataset</div><div class="flow-arr">→</div>
-          <div class="flow-box">N × M Generations</div><div class="flow-arr">→</div>
-          <div class="flow-box">Pairwise Judging</div><div class="flow-arr">→</div>
+          <div class="flow-box">Prompt Dataset</div><div class="flow-arr">&#8594;</div>
+          <div class="flow-box">N &#215; M Generations</div><div class="flow-arr">&#8594;</div>
+          <div class="flow-box">Pairwise Judging</div><div class="flow-arr">&#8594;</div>
           <div class="flow-box">ELO Rankings</div>
         </div>
-        <p>For N models and M prompts, PathScore generates N×M SVGs in parallel. It then creates all N×(N-1)/2 unique pairings per prompt, randomly assigning which generation appears as Model A and which as Model B to eliminate position bias. All pairings are judged concurrently.</p>
-      </div>
-      <div class="about-sec"><h2>Position bias elimination</h2>
-        <p>VLMs can systematically prefer the first or second image shown. PathScore randomizes A/B positions for each pair so no model is consistently advantaged. With multiple judge runs, positions are re-randomized each time and scores aggregated.</p>
+        <p>For N models and M prompts, PathScore generates N&#215;M SVGs in parallel. It then creates all N&#215;(N-1)/2 unique pairings per prompt, randomly assigning which generation appears as Model A and which as Model B to eliminate position bias.</p>
       </div>
       <div class="about-sec"><h2>ELO rating system</h2>
-        <p>Standard ELO starting at 1000 with K=32. Comparisons are processed chronologically, so rankings shift live during a run.</p>
-        <div class="formula">E<sub>A</sub> = 1 / (1 + 10^((R<sub>B</sub> − R<sub>A</sub>) / 400))<br><br>Win: R'<sub>A</sub> = R<sub>A</sub> + 32 × (1 − E<sub>A</sub>)<br>Loss: R'<sub>A</sub> = R<sub>A</sub> + 32 × (0 − E<sub>A</sub>)<br>Tie: R'<sub>A</sub> = R<sub>A</sub> + 32 × (0.5 − E<sub>A</sub>)</div>
+        <p>Standard ELO starting at 1000 with K=32. Comparisons are processed chronologically.</p>
+        <div class="formula">E<sub>A</sub> = 1 / (1 + 10^((R<sub>B</sub> - R<sub>A</sub>) / 400))</div>
       </div>
-      <div class="about-sec"><h2>Comparison count</h2>
-        <p>For N models, M prompts, R judge runs:</p>
-        <div class="formula">Total comparisons = M × N × (N − 1) / 2 × R</div>
-        <p>Example: 5 models, 10 prompts, 1 judge run = <strong>100 comparisons</strong>. Plan API costs accordingly.</p>
-      </div>
-      <div class="about-sec"><h2>Prompt categories</h2>
-        <p>PathScore ships with defaults across multiple categories. AI-assisted generation creates targeted prompts from a natural language description.</p>
-        <div><span class="cat-pill">illustration</span><span class="cat-pill">logo</span><span class="cat-pill">icon</span><span class="cat-pill">data-visualization</span><span class="cat-pill">abstract</span><span class="cat-pill">typography</span><span class="cat-pill">scene</span></div>
-      </div>
-      <div class="about-sec"><h2>Reasoning effort</h2>
-        <p>For models supporting chain-of-thought, configure reasoning effort per-model: <code>low</code>, <code>medium</code>, or <code>high</code>. Compare the same base model at different reasoning budgets within a single run.</p>
-      </div>
-      <div class="about-sec"><h2>Data portability</h2>
-        <p>Every run exports as JSON (all configs, SVGs, comparisons, metadata). Import to continue interrupted runs or share results. The HTML export produces a standalone shareable report. PDF via browser print.</p>
+      <div class="about-sec"><h2>Benchmark modes</h2>
+        <p><strong>Standard</strong> - classic generate + pairwise judge. <strong>Feedback Iteration</strong> - models also improve based on feedback. <strong>Image to SVG</strong> - test reproduction accuracy. <strong>SVG Editing</strong> - test instruction following. <strong>Human Evaluation</strong> - you judge alongside LLMs.</p>
       </div>
     </div>
 
@@ -486,7 +570,7 @@ table.lb tr:hover td{background:var(--mist);}
 <!-- SVG Modal -->
 <div class="modal-overlay" id="svg-modal">
   <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('svg-modal').classList.remove('open')">✕</button>
+    <button class="modal-close" onclick="document.getElementById('svg-modal').classList.remove('open')">&#10005;</button>
     <h3 id="modal-model" style="margin-bottom:8px;"></h3>
     <p id="modal-prompt" style="font-size:12px;color:var(--stone);margin-bottom:16px;"></p>
     <div id="modal-img" style="border:1.5px solid var(--border);border-radius:4px;padding:16px;background:var(--mist);"></div>
@@ -504,20 +588,22 @@ table.lb tr:hover td{background:var(--mist);}
 // State
 let currentRunId = null;
 let sseConn = null;
-let cfg = { models: [], prompts: [], judge: { model: 'google/gemini-3-flash-preview', runs: 1 }, generation: { max_tokens: 4096, temperature: 0.7 }, name: '' };
+let cfg = { mode:'standard', models:[], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'' };
 let editRunId = null;
 let allModels = [];
 let modelOffset = 0;
 let modelQ = '';
-let runStats = { genDone:0, genTotal:0, cmpDone:0, cmpTotal:0, errors:0 };
+let allIterModels = [];
+let runStats = {genDone:0,genTotal:0,cmpDone:0,cmpTotal:0,errors:0};
 let runStart = null;
 let elapsedTmr = null;
 let resultsData = null;
 let allCmps = [];
 let cmpPage = 0;
 const CMP_PS = 24;
+let humanPending = [];
+let humanIdx = 0;
 
-// Utils
 function toast(msg, type) {
   const el = document.createElement('div');
   el.className = 'toast' + (type ? ' '+type : '');
@@ -526,12 +612,12 @@ function toast(msg, type) {
   setTimeout(() => el.remove(), 4000);
 }
 function fmt(ms) {
-  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
   if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');
   return m+':'+String(ss).padStart(2,'0');
 }
 function sm(id) { return id.split('/').pop() || id; }
-function trunc(s, n) { return s && s.length > n ? s.slice(0,n)+'...' : (s||''); }
+function trunc(s,n) { return s && s.length>n ? s.slice(0,n)+'...' : (s||''); }
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // Navigation
@@ -540,6 +626,7 @@ function showPage(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page===name));
   if (name==='home') loadRuns();
+  if (name==='human-judge') loadHumanJudge();
 }
 
 // HOME
@@ -549,7 +636,7 @@ async function loadRuns() {
   const el = document.getElementById('runs-list');
   document.getElementById('runs-count').textContent = runs.length + ' benchmark' + (runs.length!==1?'s':'');
   if (!runs.length) {
-    el.innerHTML = '<div class="empty-state"><img src="https://v3b.fal.media/files/b/0a904aba/iqE6mb1Ni9h-omdgQgrN2_iI5ILCL5.png" style="width:48px;height:48px;opacity:.3;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto;"><h3>No benchmarks yet</h3><p>Create your first benchmark to evaluate SVG generation quality.</p></div>';
+    el.innerHTML = '<div class="empty-state"><h3>No benchmarks yet</h3><p>Create your first benchmark to evaluate SVG generation quality.</p></div>';
     return;
   }
   el.innerHTML = runs.map(r => {
@@ -559,13 +646,14 @@ async function loadRuns() {
     const date = new Date(r.created_at).toLocaleDateString();
     const genInfo = r.genTotal ? r.genDone+'/'+r.genTotal+' SVGs' : '';
     const cmpInfo = r.cmpTotal ? r.cmpDone+'/'+r.cmpTotal+' cmps' : '';
-    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(\''+r.id+'\')">Results</button>' : '') +
-      (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(\''+r.id+'\')">Run</button>' : '') +
-      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(\''+r.id+'\',this)">✕</button>';
-    return '<div class="run-card" onclick="openRun(\''+r.id+'\',\''+r.status+'\')">' +
-      '<div><div class="run-card-name">'+esc(r.name)+'</div>' +
-      '<div class="run-card-meta"><span>'+date+'</span>'+(genInfo?'<span>'+genInfo+'</span>':'')+(cmpInfo?'<span>'+cmpInfo+'</span>':'')+'</div></div>' +
-      '<div class="run-progress-col"><div class="run-progress-label"><span class="s-'+r.status+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+r.status+'</span><span>'+pct+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+pct+'%"></div></div></div>' +
+    const modeTag = r.mode && r.mode!=='standard' ? '<span style="font-size:10px;background:var(--mist);padding:2px 8px;border-radius:10px;margin-left:8px;">'+esc(r.mode.replace('_',' '))+'</span>' : '';
+    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(''+r.id+'')">Results</button>' : '') +
+      (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(''+r.id+'')">Run</button>' : '') +
+      '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(''+r.id+'',this)">&#10005;</button>';
+    return '<div class="run-card" onclick="openRun(''+r.id+'',''+r.status+'')">'+
+      '<div><div class="run-card-name">'+esc(r.name)+modeTag+'</div>'+
+      '<div class="run-card-meta"><span>'+date+'</span>'+(genInfo?'<span>'+genInfo+'</span>':'')+(cmpInfo?'<span>'+cmpInfo+'</span>':'')+'</div></div>'+
+      '<div class="run-progress-col"><div class="run-progress-label"><span class="s-'+r.status+'" style="display:flex;align-items:center;"><span class="status-dot"></span>'+r.status+'</span><span>'+pct+'%</span></div><div class="pbar"><div class="pbar-fill" style="width:'+pct+'%"></div></div></div>'+
       '<div style="display:flex;gap:6px;">'+actions+'</div></div>';
   }).join('');
 }
@@ -585,11 +673,12 @@ async function deleteRun(id, btn) {
 // CONFIGURE
 function startNewBenchmark() {
   editRunId = null;
-  cfg = { models:[{id:'qwen/qwen3.5-122b-a10b',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
+  cfg = { mode:'standard', models:[{id:'google/gemini-2.5-flash',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
   document.getElementById('cfg-title').textContent = 'New Benchmark';
   document.getElementById('bench-name').value = cfg.name;
   document.getElementById('judge-search').value = cfg.judge.model;
   document.getElementById('judge-sel').textContent = 'Judge: '+cfg.judge.model;
+  selectMode('standard');
   showStep(0);
   renderSelModels();
   loadDefaultPrompts();
@@ -603,12 +692,14 @@ async function editAndRun(id) {
   editRunId = id;
   cfg = run.config;
   if (!cfg.name) cfg.name = run.name;
+  if (!cfg.mode) cfg.mode = run.mode || 'standard';
   document.getElementById('cfg-title').textContent = esc(run.name);
   document.getElementById('bench-name').value = run.name;
   document.getElementById('judge-search').value = cfg.judge?.model||'';
   document.getElementById('judge-sel').textContent = 'Judge: '+(cfg.judge?.model||'none');
   document.getElementById('judge-runs').value = cfg.judge?.runs||1;
   document.getElementById('judge-runs-v').textContent = (cfg.judge?.runs||1)+' run'+((cfg.judge?.runs||1)>1?'s':'');
+  selectMode(cfg.mode || 'standard');
   renderSelModels();
   renderPromptList();
   showStep(0);
@@ -616,14 +707,31 @@ async function editAndRun(id) {
   initModelSearch();
 }
 
+function selectMode(mode) {
+  cfg.mode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('mode-'+mode);
+  if (card) card.classList.add('selected');
+  document.getElementById('iter-model-section').style.display = mode==='feedback_iteration' ? 'block' : 'none';
+  document.getElementById('human-eval-section').style.display = mode==='human_eval' ? 'block' : 'none';
+  // Show/hide prompt sections based on mode
+  if (document.getElementById('prompt-standard-section')) {
+    document.getElementById('prompt-standard-section').style.display = (mode==='image_to_svg'||mode==='svg_editing') ? 'none' : 'block';
+    document.getElementById('prompt-image-section').style.display = mode==='image_to_svg' ? 'block' : 'none';
+    document.getElementById('prompt-editing-section').style.display = mode==='svg_editing' ? 'block' : 'none';
+  }
+  updateSum();
+}
+
 function showStep(idx) {
   document.querySelectorAll('.config-step').forEach((el,i) => el.classList.toggle('active',i===idx));
   document.querySelectorAll('.config-panel').forEach((el,i) => el.classList.toggle('active',i===idx));
-  if (idx===3) updateEstimate();
+  if (idx===4) updateEstimate();
   updateSum();
 }
 
 function updateSum() {
+  document.getElementById('sum-mode').textContent = 'Mode: '+(cfg.mode||'standard');
   document.getElementById('sum-models').textContent = cfg.models.length+' model'+(cfg.models.length!==1?'s':'');
   document.getElementById('sum-prompts').textContent = cfg.prompts.length+' prompt'+(cfg.prompts.length!==1?'s':'');
   document.getElementById('sum-judge').textContent = cfg.judge?.model ? trunc(cfg.judge.model,30) : 'No judge';
@@ -632,12 +740,12 @@ function updateSum() {
 function updateEstimate() {
   const N=cfg.models.length, M=cfg.prompts.length, R=cfg.judge?.runs||1;
   const gens=N*M, cmps=M*N*(N-1)/2*R;
-  document.getElementById('bench-estimate').innerHTML = '<h3 style="margin-bottom:12px;">Estimate</h3>' +
-    '<div class="grid3" style="gap:12px;">' +
-    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">SVG Generations</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+gens+'</div></div>' +
-    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Comparisons</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+cmps+'</div></div>' +
-    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Total API Calls</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+(gens+cmps)+'</div></div>' +
-    '</div><p style="font-size:11px;color:var(--stone);margin-top:12px;">'+N+' model'+(N!==1?'s':'')+' × '+M+' prompt'+(M!==1?'s':'')+' + N×(N-1)/2 pairs × '+R+' judge run'+(R!==1?'s':'')+'. All requests run in parallel.</p>';
+  document.getElementById('bench-estimate').innerHTML = '<h3 style="margin-bottom:12px;">Estimate</h3>'+
+    '<div class="grid3" style="gap:12px;">'+
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">SVG Generations</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+gens+'</div></div>'+
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Comparisons</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+cmps+'</div></div>'+
+    '<div><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;">Total API Calls</div><div style="font-family:var(--font-h);font-weight:800;font-size:24px;">'+(gens+cmps)+'</div></div>'+
+    '</div><p style="font-size:11px;color:var(--stone);margin-top:12px;">'+N+' model'+(N!==1?'s':'')+' x '+M+' prompt'+(M!==1?'s':'')+' + N*(N-1)/2 pairs x '+R+' judge run'+(R!==1?'s':'')+'. All requests run in parallel.</p>';
 }
 
 async function saveAndRun() {
@@ -646,15 +754,17 @@ async function saveAndRun() {
   cfg.generation.max_tokens = parseInt(document.getElementById('gen-max-tokens').value)||4096;
   cfg.generation.temperature = parseFloat(document.getElementById('gen-temp').value)||0.7;
   cfg.judge.runs = parseInt(document.getElementById('judge-runs').value)||1;
-  if (!cfg.models.length) { toast('Add at least one model','err'); showStep(0); return; }
-  if (!cfg.prompts.length) { toast('Add at least one prompt','err'); showStep(1); return; }
-  if (!cfg.judge.model) { toast('Select a judge model','err'); showStep(2); return; }
+  if (cfg.mode === 'human_eval') cfg.human_eval_llm_judge = document.getElementById('human-llm-judge').checked;
+  if (cfg.mode === 'feedback_iteration' && allIterModels.length > 0) cfg.iteration_models = allIterModels;
+  if (!cfg.models.length) { toast('Add at least one model','err'); showStep(1); return; }
+  if (!cfg.prompts.length) { toast('Add at least one prompt','err'); showStep(2); return; }
+  if (!cfg.judge.model) { toast('Select a judge model','err'); showStep(3); return; }
   let runId;
   if (editRunId) {
-    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg,mode:cfg.mode})});
     runId = editRunId;
   } else {
-    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg,mode:cfg.mode})});
     const d = await res.json(); runId = d.id;
   }
   await fetch('/api/runs/'+runId+'/start', {method:'POST'});
@@ -665,9 +775,9 @@ async function saveDraft() {
   const name = document.getElementById('bench-name').value.trim() || 'Draft '+new Date().toLocaleDateString();
   cfg.name = name;
   if (editRunId) {
-    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    await fetch('/api/runs/'+editRunId, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg,mode:cfg.mode})});
   } else {
-    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg})});
+    const res = await fetch('/api/runs', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,config:cfg,mode:cfg.mode})});
     const d = await res.json(); editRunId = d.id;
   }
   toast('Draft saved'); loadRuns();
@@ -702,10 +812,16 @@ async function loadMoreModels() {
 }
 function renderModelOpts(models, hasMore) {
   const selIds = cfg.models.map(m => m.id||m);
-  document.getElementById('model-options').innerHTML = models.map(m =>
-    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(\''+esc(m.id)+'\')">'+
+  const modelsWithMeta = models.map(m => {
+    const ctxStr = m.context_length ? Math.round(m.context_length/1000)+'k' : '';
+    const priceStr = m.pricing?.prompt ? '$'+(parseFloat(m.pricing.prompt)*1000000).toFixed(3)+'/M' : '';
+    const meta = [ctxStr, priceStr].filter(Boolean).join(' · ');
+    return { m, meta };
+  });
+  document.getElementById('model-options').innerHTML = modelsWithMeta.map(({m,meta}) =>
+    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(''+esc(m.id)+'')">'+
     '<div><div class="model-option-id">'+esc(m.id)+'</div>'+(m.name&&m.name!==m.id?'<div style="font-size:10px;color:var(--stone);">'+esc(trunc(m.name,40))+'</div>':'')+
-    '</div><div class="model-option-meta">'+(m.context_length?Math.round(m.context_length/1000)+'k ctx':'')+'</div></div>'
+    '</div><div class="model-option-meta">'+esc(meta)+'</div></div>'
   ).join('');
   const lm = document.getElementById('model-load-more');
   lm.style.display = hasMore ? 'block' : 'none';
@@ -725,13 +841,46 @@ function renderSelModels() {
   el.innerHTML = cfg.models.map((m,i) => {
     const id = m.id||m;
     return '<div class="sel-model-row">'+
-      '<span class="sel-model-id">'+esc(id)+'</span>'+
+      '<span class="sel-model-id" title="'+esc(id)+'">'+esc(id)+'</span>'+
       '<select class="reasoning-sel" onchange="cfg.models['+i+'].reasoning_effort=this.value||null" title="Reasoning effort">'+
       '<option value=""'+((!m.reasoning_effort)?' selected':'')+'>Default</option>'+
       '<option value="low"'+(m.reasoning_effort==='low'?' selected':'')+'>Low</option>'+
       '<option value="medium"'+(m.reasoning_effort==='medium'?' selected':'')+'>Medium</option>'+
       '<option value="high"'+(m.reasoning_effort==='high'?' selected':'')+'>High</option>'+
-      '</select><button class="rm-btn" onclick="cfg.models.splice('+i+',1);renderSelModels();updateSum()">×</button></div>';
+      '</select><button class="rm-btn" onclick="cfg.models.splice('+i+',1);renderSelModels();updateSum()">&#215;</button></div>';
+  }).join('');
+}
+
+// Iteration models
+async function searchIterModels(q) {
+  document.getElementById('iter-model-dd').style.display='block';
+  const res = await fetch('/api/models?q='+encodeURIComponent(q)+'&limit=20&offset=0');
+  const d = await res.json();
+  renderIterModelOpts(d.models);
+}
+function showIterModelDD() {
+  document.getElementById('iter-model-dd').style.display='block';
+  if (!document.getElementById('iter-model-options').children.length) searchIterModels('');
+}
+function renderIterModelOpts(models) {
+  const selIds = allIterModels.map(m => m.id||m);
+  document.getElementById('iter-model-options').innerHTML = models.map(m =>
+    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleIterModel(''+esc(m.id)+'')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
+  ).join('');
+}
+function toggleIterModel(id) {
+  const idx = allIterModels.findIndex(m => (m.id||m)===id);
+  if (idx>=0) allIterModels.splice(idx,1);
+  else allIterModels.push({id,reasoning_effort:null});
+  renderSelIterModels();
+}
+function renderSelIterModels() {
+  const el = document.getElementById('sel-iter-models');
+  if (!allIterModels.length) { el.innerHTML = '<p style="font-size:12px;color:var(--stone);">No iteration models selected (will reuse main models).</p>'; return; }
+  el.innerHTML = allIterModels.map((m,i) => {
+    const id = m.id||m;
+    return '<div class="sel-model-row"><span class="sel-model-id" title="'+esc(id)+'">'+esc(id)+'</span>'+
+      '<button class="rm-btn" onclick="allIterModels.splice('+i+',1);renderSelIterModels()">&#215;</button></div>';
   }).join('');
 }
 
@@ -741,7 +890,7 @@ async function searchJudge(q) {
   const res = await fetch('/api/models?q='+encodeURIComponent(q)+'&limit=20&offset=0');
   const d = await res.json();
   document.getElementById('judge-options').innerHTML = d.models.map(m =>
-    '<div class="model-option" onclick="selectJudge(\''+esc(m.id)+'\')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
+    '<div class="model-option" onclick="selectJudge(''+esc(m.id)+'')"><div class="model-option-id">'+esc(m.id)+'</div></div>'
   ).join('');
 }
 function showJudgeDD() {
@@ -751,7 +900,7 @@ function showJudgeDD() {
 function selectJudge(id) {
   cfg.judge.model = id;
   document.getElementById('judge-search').value = id;
-  document.getElementById('judge-sel').textContent = '✓ Judge: '+id;
+  document.getElementById('judge-sel').textContent = 'Judge: '+id;
   document.getElementById('judge-dd').style.display='none';
   updateSum();
 }
@@ -759,6 +908,7 @@ function selectJudge(id) {
 document.addEventListener('click', e => {
   if (!e.target.closest('#model-search') && !e.target.closest('#model-dd')) { const d=document.getElementById('model-dd'); if(d) d.style.display='none'; }
   if (!e.target.closest('#judge-search') && !e.target.closest('#judge-dd')) { const d=document.getElementById('judge-dd'); if(d) d.style.display='none'; }
+  if (!e.target.closest('#iter-model-search') && !e.target.closest('#iter-model-dd')) { const d=document.getElementById('iter-model-dd'); if(d) d.style.display='none'; }
 });
 
 // Prompts
@@ -769,7 +919,7 @@ function renderPromptList() {
     '<div class="prompt-row">'+
     '<input type="text" class="prompt-text-input" value="'+esc(p.text||'')+'" placeholder="Describe the SVG..." onchange="cfg.prompts['+i+'].text=this.value">'+
     '<select class="prompt-cat" onchange="cfg.prompts['+i+'].category=this.value">'+cats.map(c=>'<option value="'+c+'"'+(p.category===c?' selected':'')+'>'+c+'</option>').join('')+'</select>'+
-    '<button class="rm-btn" onclick="cfg.prompts.splice('+i+',1);renderPromptList()">×</button></div>'
+    '<button class="rm-btn" onclick="cfg.prompts.splice('+i+',1);renderPromptList()">&#215;</button></div>'
   ).join('');
   updateSum();
 }
@@ -779,7 +929,7 @@ function addPromptRow() {
   const rows = document.querySelectorAll('.prompt-row');
   if(rows.length) rows[rows.length-1].querySelector('input').focus();
 }
-function clearPrompts() { cfg.prompts=[]; renderPromptList(); }
+function clearPrompts() { cfg.prompts=[]; renderPromptList(); renderImagePromptList(); renderEditPromptList(); }
 async function loadDefaultPrompts() {
   const res = await fetch('/api/default-prompts');
   cfg.prompts = await res.json();
@@ -799,6 +949,58 @@ async function generatePrompts() {
     renderPromptList(); toast('Added '+d.prompts.length+' prompts');
   } catch(err) { toast('Failed: '+err.message,'err'); }
   finally { btn.disabled=false; btn.textContent='Generate'; }
+}
+
+// Image prompts
+function renderImagePromptList() {
+  const el = document.getElementById('image-prompt-list');
+  if (!el) return;
+  el.innerHTML = cfg.prompts.map((p,i) => {
+    const hasImg = !!p.reference_image;
+    return '<div class="prompt-row" style="flex-direction:column;align-items:flex-start;gap:8px;padding:12px;background:var(--mist);border-radius:6px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;width:100%;">'+
+      '<input type="text" class="prompt-text-input" value="'+esc(p.text||'')+'" placeholder="Optional: describe the image context..." onchange="cfg.prompts['+i+'].text=this.value" style="flex:1;">'+
+      '<button class="rm-btn" onclick="cfg.prompts.splice('+i+',1);renderImagePromptList()">&#215;</button></div>'+
+      '<div class="img-upload-area '+(hasImg?'has-image':'')+'" onclick="triggerImgUpload('+i+')">'+
+      (hasImg ? '<img class="img-thumbnail" src="'+p.reference_image+'" alt="Reference image">' : '<div style="font-size:12px;color:var(--stone);">Click to upload reference image</div>')+
+      '</div>'+
+      '<input type="file" accept="image/*" style="display:none" id="img-upload-'+i+'" onchange="handleImgUpload(event,'+i+')">'+
+      '</div>';
+  }).join('');
+  updateSum();
+}
+function triggerImgUpload(i) { document.getElementById('img-upload-'+i).click(); }
+function handleImgUpload(e, i) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { cfg.prompts[i].reference_image = ev.target.result; renderImagePromptList(); };
+  reader.readAsDataURL(file);
+}
+function addImagePromptRow() {
+  cfg.prompts.push({id:crypto.randomUUID(),text:'',category:'illustration'});
+  renderImagePromptList();
+}
+
+// Edit prompts
+function renderEditPromptList() {
+  const el = document.getElementById('edit-prompt-list');
+  if (!el) return;
+  el.innerHTML = cfg.prompts.map((p,i) =>
+    '<div style="border:1.5px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'+
+    '<span style="font-size:11px;color:var(--stone);">Edit Task '+(i+1)+'</span>'+
+    '<button class="rm-btn" onclick="cfg.prompts.splice('+i+',1);renderEditPromptList()">&#215;</button></div>'+
+    '<div class="field"><label class="label">Edit Instruction</label>'+
+    '<input type="text" value="'+esc(p.edit_instruction||p.text||'')+'" placeholder="e.g. Change all circles to squares" onchange="cfg.prompts['+i+'].edit_instruction=this.value;cfg.prompts['+i+'].text=this.value;"></div>'+
+    '<div class="field"><label class="label">Source SVG</label>'+
+    '<textarea rows="4" placeholder="Paste SVG code here..." onchange="cfg.prompts['+i+'].source_svg=this.value" style="font-size:11px;">'+esc(p.source_svg||'')+'</textarea></div>'+
+    '</div>'
+  ).join('');
+  updateSum();
+}
+function addEditPromptRow() {
+  cfg.prompts.push({id:crypto.randomUUID(),text:'',edit_instruction:'',source_svg:'',category:'icon'});
+  renderEditPromptList();
 }
 
 function toggleAdv(id,btn) {
@@ -853,21 +1055,26 @@ function connectSSE(id) {
   const es = new EventSource('/api/runs/'+id+'/events');
   sseConn = es;
   const h = {
-    run_start: d => { addEv('🚀 Run started', sm(d.modelIds?.[0]||'')+' +'+((d.modelIds?.length||1)-1)+' more × '+d.promptCount+' prompts', '', ''); setStatus('running'); },
-    generation_start: d => addEv('⚙ Generating', esc(sm(d.modelId)), esc(trunc('"'+d.promptText+'"',50)), 'ev-gen-start'),
-    generation_complete: d => { runStats.genDone++; updateStats(); addEv('✓ SVG ready', esc(sm(d.modelId))+' — '+d.timeMs+'ms', esc(trunc('"'+d.promptText+'"',40)), 'ev-gen-ok'); addThumb(d.genId, d.modelId, d.promptText); },
-    generation_error: d => { runStats.errors++; updateStats(); addEv('✗ Failed', esc(sm(d.modelId))+': '+esc(trunc(d.error,60)), '', 'ev-gen-err'); },
-    comparison_start: d => addEv('⚖ Judging', esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), esc(trunc('"'+d.promptText+'"',40)), 'ev-cmp-start'),
+    run_start: d => { addEv('Run started', sm(d.modelIds?.[0]||'')+' +'+((d.modelIds?.length||1)-1)+' more x '+d.promptCount+' prompts ['+esc(d.mode||'standard')+']', '', ''); setStatus('running'); },
+    generation_start: d => addEv('Generating', esc(sm(d.modelId)), esc(trunc('"'+d.promptText+'"',50)), 'ev-gen-start'),
+    generation_complete: d => { runStats.genDone++; updateStats(); addEv('SVG ready', esc(sm(d.modelId))+' - '+d.timeMs+'ms', esc(trunc('"'+d.promptText+'"',40)), 'ev-gen-ok'); addThumb(d.genId, d.modelId, d.promptText); },
+    generation_error: d => { runStats.errors++; updateStats(); addEv('Failed', esc(sm(d.modelId))+': '+esc(trunc(d.error,60)), '', 'ev-gen-err'); },
+    comparison_start: d => addEv('Judging', esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), esc(trunc('"'+d.promptText+'"',40)), 'ev-cmp-start'),
     comparison_complete: d => {
       runStats.cmpDone++; updateStats();
       const wb = d.winner==='A'?'<span class="wb wb-a">A wins</span>':d.winner==='B'?'<span class="wb wb-b">B wins</span>':'<span class="wb wb-tie">tie</span>';
-      const sc = d.scoreA!=null?' ('+d.scoreA+'–'+d.scoreB+')':'';
-      addEv('⚖ '+esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), wb+sc, esc(trunc(d.thoughtProcess||'',80)), 'ev-cmp-ok');
+      const sc = d.scoreA!=null?' ('+d.scoreA+'-'+d.scoreB+')':'';
+      addEv(esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), wb+sc, esc(trunc(d.thoughtProcess||'',80)), 'ev-cmp-ok');
     },
-    comparison_error: d => { runStats.errors++; updateStats(); addEv('✗ Judge failed', esc(trunc(d.error,80)), '', 'ev-cmp-err'); },
-    run_complete: () => { clearInterval(elapsedTmr); setStatus('complete'); addEv('✅ Complete','All done!','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
-    run_error: d => { clearInterval(elapsedTmr); setStatus('error'); addEv('❌ Error', esc(d.error),'','ev-gen-err'); },
-    run_stopped: () => { clearInterval(elapsedTmr); setStatus('stopped'); addEv('⏹ Stopped','Run was stopped manually','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
+    comparison_error: d => { runStats.errors++; updateStats(); addEv('Judge failed', esc(trunc(d.error,80)), '', 'ev-cmp-err'); },
+    iteration_start: d => addEv('Iterating', esc(sm(d.modelId)), esc(trunc(d.feedback||'',60)), 'ev-gen-start'),
+    iteration_complete: d => { addEv('Iteration ready', esc(sm(d.modelId)), '', 'ev-gen-ok'); },
+    iter_comparison_complete: d => { addEv('Iter judged', esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), d.bothBad?'Both bad':'Winner: '+d.winner, 'ev-cmp-ok'); },
+    comparison_pending_human: d => addEv('Pending human', esc(sm(d.modelA))+' vs '+esc(sm(d.modelB)), '', 'ev-cmp-start'),
+    phase_start: d => addEv('Phase '+d.phase, d.label, '', ''),
+    run_complete: () => { clearInterval(elapsedTmr); setStatus('complete'); addEv('Complete','All done!','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
+    run_error: d => { clearInterval(elapsedTmr); setStatus('error'); addEv('Error', esc(d.error),'','ev-gen-err'); },
+    run_stopped: () => { clearInterval(elapsedTmr); setStatus('stopped'); addEv('Stopped','Run was stopped manually','',''); document.getElementById('btn-view-results').style.display=''; document.getElementById('btn-stop').style.display='none'; },
   };
   Object.entries(h).forEach(([t,fn]) => es.addEventListener(t, e => { try { fn(JSON.parse(e.data)); } catch(_){} }));
   es.onerror = () => {};
@@ -902,9 +1109,9 @@ function addThumb(genId, modelId, promptText) {
   const grid=document.getElementById('svg-grid');
   const el=document.createElement('div');
   el.className='svg-thumb';
-  const safeId=esc(genId), safeModel=esc(modelId), safePrompt=esc(trunc(promptText,40));
-  el.setAttribute('onclick','showSVGModal("'+genId+'","'+esc(modelId)+'","'+esc(promptText)+'")');
-  el.innerHTML='<div class="svg-thumb-img"><img src="/api/generations/'+safeId+'/svg" loading="lazy" alt=""></div><div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(modelId))+'</div><div class="svg-thumb-prompt">'+safePrompt+'</div></div>';
+  const safeId=esc(genId);
+  el.setAttribute('onclick','showSVGModal("'+esc(genId)+'","'+esc(modelId)+'","'+esc(promptText)+'")');
+  el.innerHTML='<div class="svg-thumb-img"><img src="/api/generations/'+safeId+'/svg" loading="lazy" alt=""></div><div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(modelId))+'</div><div class="svg-thumb-prompt">'+esc(trunc(promptText,40))+'</div></div>';
   grid.insertBefore(el,grid.firstChild);
 }
 
@@ -915,7 +1122,7 @@ async function showSVGModal(genId, modelId, promptText) {
   document.getElementById('modal-code').style.display='none';
   document.getElementById('modal-dl').href='/api/generations/'+esc(genId)+'/svg';
   document.getElementById('modal-dl').download='pathscore-'+genId.slice(0,8)+'.svg';
-  const res = await fetch('/api/generations/'+genId+'/svg');
+  const res = await fetch('/api/generations/'+esc(genId)+'/svg');
   document.getElementById('modal-code').textContent = await res.text();
   document.getElementById('svg-modal').classList.add('open');
 }
@@ -935,33 +1142,47 @@ async function loadResults(id) {
   resultsData = await res.json();
   allCmps = resultsData.comparisons||[];
   document.getElementById('res-title').textContent = resultsData.run.name;
-  document.getElementById('res-sub').textContent = resultsData.models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+allCmps.filter(c=>c.status==='complete').length+' comparisons';
+  const mode = resultsData.run.mode || resultsData.run.config?.mode || 'standard';
+  document.getElementById('res-sub').textContent = resultsData.models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+allCmps.filter(c=>c.status==='complete').length+' comparisons · '+mode;
   document.getElementById('export-bar').dataset.runId = id;
+  // Mode-specific tabs
+  const iterBtn = document.getElementById('tab-iter-btn');
+  const agreeBtn = document.getElementById('tab-agree-btn');
+  const humanBtn = document.getElementById('tab-human-btn');
+  iterBtn.style.display = mode==='feedback_iteration' ? '' : 'none';
+  agreeBtn.style.display = mode==='human_eval' ? '' : 'none';
+  humanBtn.style.display = mode==='human_eval' ? '' : 'none';
   renderLB(); renderHM(); filterCmps(''); renderOutputs(); populateOutFilters();
+  if (mode==='feedback_iteration') renderIterResults();
+  if (mode==='human_eval') renderAgreement();
 }
 
 function renderLB() {
-  const lb=resultsData.leaderboard, maxElo=Math.max(...lb.map(r=>r.elo));
+  const lb=resultsData.leaderboard, maxElo=Math.max(...lb.map(r=>r.elo),1001);
   document.getElementById('lb-body').innerHTML = lb.map((row,i) => {
     const rank=i+1, rc=rank<=3?'r'+rank:'', pct=maxElo>0?(row.elo/maxElo*100):50;
-    const wr=row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'—';
-    return '<tr><td><span class="rank '+rc+'">'+rank+'</span></td>' +
-      '<td style="font-family:var(--font-b);font-size:12px;">'+esc(row.model)+'</td>' +
-      '<td><div class="elo-bar-row"><div class="elo-bar"><div class="elo-bar-fill" style="width:'+pct+'%;background:'+(rank===1?'var(--ember)':'var(--ink)')+'"></div></div><div class="elo-num">'+row.elo+'</div></div></td>' +
-      '<td style="font-size:12px;color:var(--stone);">'+wr+'</td>' +
-      '<td style="font-size:12px;color:var(--stone);"><strong>'+row.wins+'</strong> / '+row.losses+' / '+row.ties+'</td>' +
-      '<td style="font-size:12px;color:var(--stone);">'+(row.avgScore??'—')+'</td></tr>';
+    const wr=row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'--';
+    return '<tr><td><span class="rank '+rc+'">'+rank+'</span></td>'+
+      '<td style="font-family:var(--font-b);font-size:12px;">'+esc(row.model)+'</td>'+
+      '<td><div class="elo-bar-row"><div class="elo-bar"><div class="elo-bar-fill" style="width:'+pct+'%;background:'+(rank===1?'var(--ember)':'var(--ink)')+'"></div></div><div class="elo-num">'+row.elo+'</div></div></td>'+
+      '<td style="font-size:12px;color:var(--stone);">'+wr+'</td>'+
+      '<td style="font-size:12px;color:var(--stone);"><strong>'+row.wins+'</strong> / '+row.losses+' / '+row.ties+'</td>'+
+      '<td style="font-size:12px;color:var(--stone);">'+(row.avgScore??'--')+'</td></tr>';
   }).join('');
 }
 
 function renderHM() {
   const models=resultsData.models, hm=resultsData.heatmap;
+  if (!models || models.length < 2) {
+    document.getElementById('hm-wrap').innerHTML='<p style="color:var(--stone);font-size:13px;">Need at least 2 models for heatmap.</p>';
+    return;
+  }
   const cols=models.map(m=>'<th title="'+esc(m)+'">'+esc(trunc(sm(m),12))+'</th>').join('');
   const rows=models.map(rm => {
     const cells=models.map(cm => {
       if(rm===cm) return '<td><div class="hm-cell hm-na">N/A</div></td>';
       const v=hm[rm]?.[cm];
-      if(v===null||v===undefined) return '<td><div class="hm-cell" style="background:#f9f9f9;color:var(--stone);">—</div></td>';
+      if(v===null||v===undefined) return '<td><div class="hm-cell" style="background:#f9f9f9;color:var(--stone);">--</div></td>';
       const r=Math.round(232*v+76*(1-v)), g=Math.round(77*v+175*(1-v)), b=Math.round(47*v+74*(1-v));
       return '<td><div class="hm-cell" style="background:rgb('+r+','+g+','+b+');color:white;">'+(v*100).toFixed(0)+'%</div></td>';
     }).join('');
@@ -983,23 +1204,85 @@ function filterCmps(text) {
 
 function renderCmpPage() {
   const filtered=window._fCmps||[], slice=filtered.slice(0,(cmpPage+1)*CMP_PS);
+  const mode = resultsData?.run?.mode || 'standard';
   document.getElementById('cmp-grid').innerHTML = slice.map(c => {
     const wb=c.winner==='A'?'<span class="wb wb-a">A wins ('+c.model_a_score+'/10)</span>':c.winner==='B'?'<span class="wb wb-b">B wins ('+c.model_b_score+'/10)</span>':'<span class="wb wb-tie">Tie</span>';
     const safeA=esc(c.generation_a_id), safeB=esc(c.generation_b_id);
+    // For image_to_svg mode, find reference image
+    let refImg = '';
+    if (mode==='image_to_svg') {
+      const prompt = resultsData.run.config.prompts.find(p => p.id===c.prompt_id);
+      if (prompt?.reference_image) refImg = '<div class="cmp-img-slot"><div class="label">Reference</div><div class="cmp-svg-box"><img src="'+prompt.reference_image+'" alt="Reference"></div></div>';
+    }
     return '<div class="cmp-card">'+
       '<div class="cmp-card-hdr"><span class="cmp-prompt">"'+esc(trunc(c.prompt_text,50))+'"</span>'+wb+'</div>'+
-      '<div class="cmp-images">'+
-      '<div class="cmp-img-slot"><div class="label">Model A '+(c.winner==='A'?'🏆':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeA+'\',\''+esc(c.model_a_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeA+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_a_id))+'</div></div>'+
-      '<div class="cmp-img-slot"><div class="label">Model B '+(c.winner==='B'?'🏆':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(\''+safeB+'\',\''+esc(c.model_b_id)+'\',\''+esc(c.prompt_text)+'\')"><img src="/api/generations/'+safeB+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_b_id))+'</div></div>'+
+      '<div class="cmp-images" style="grid-template-columns:'+(refImg?'1fr 1fr 1fr':'1fr 1fr')+'">'+
+      refImg+
+      '<div class="cmp-img-slot"><div class="label">Model A '+(c.winner==='A'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(''+safeA+'',''+esc(c.model_a_id)+'',''+esc(c.prompt_text)+'')"><img src="/api/generations/'+safeA+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_a_id))+'</div></div>'+
+      '<div class="cmp-img-slot"><div class="label">Model B '+(c.winner==='B'?'&#127942;':'')+'</div><div class="cmp-svg-box" onclick="showSVGModal(''+safeB+'',''+esc(c.model_b_id)+'',''+esc(c.prompt_text)+'')"><img src="/api/generations/'+safeB+'/svg" loading="lazy" alt=""></div><div style="font-size:10px;color:var(--stone);margin-top:4px;">'+esc(sm(c.model_b_id))+'</div></div>'+
       '</div>'+(c.thought_process?'<div class="cmp-card-ftr">'+esc(trunc(c.thought_process,120))+'</div>':'')+
       '</div>';
   }).join('');
   const more=document.getElementById('cmp-more');
   if(filtered.length>slice.length) {
-    more.innerHTML='<button class="btn btn-outline btn-sm" onclick="cmpPage++;renderCmpPage()">Load more ('+( filtered.length-slice.length)+' remaining)</button>';
+    more.innerHTML='<button class="btn btn-outline btn-sm" onclick="cmpPage++;renderCmpPage()">Load more ('+(filtered.length-slice.length)+' remaining)</button>';
   } else {
     more.innerHTML='<span style="font-size:12px;color:var(--stone);">'+filtered.length+' comparison'+(filtered.length!==1?'s':'')+' shown</span>';
   }
+}
+
+function renderIterResults() {
+  const iterLb = resultsData.iterLeaderboard;
+  const iters = resultsData.iterations || [];
+  const iterCmps = resultsData.iterationComparisons || [];
+  if (!iterLb || !iterLb.length) {
+    document.getElementById('iter-lb-wrap').innerHTML='<p style="color:var(--stone);">No iteration data yet.</p>';
+    return;
+  }
+  const maxElo = Math.max(...iterLb.map(r=>r.elo), 1001);
+  document.getElementById('iter-lb-wrap').innerHTML =
+    '<h3 style="margin-bottom:16px;">Iteration ELO Leaderboard</h3>'+
+    '<table class="lb"><thead><tr><th>#</th><th>Model</th><th>Iteration ELO</th><th>Both Bad Count</th></tr></thead><tbody>'+
+    iterLb.map((row,i) => {
+      const pct = maxElo>0?(row.elo/maxElo*100):50;
+      return '<tr><td><span class="rank '+(i<3?'r'+(i+1):'')+'">'+( i+1)+'</span></td>'+
+        '<td style="font-family:var(--font-b);font-size:12px;">'+esc(row.model)+'</td>'+
+        '<td><div class="elo-bar-row"><div class="elo-bar"><div class="elo-bar-fill" style="width:'+pct+'%"></div></div><div class="elo-num">'+row.elo+'</div></div></td>'+
+        '<td style="font-size:12px;color:var(--stone);">'+(row.bothBadCount||0)+'</td></tr>';
+    }).join('')+'</tbody></table>';
+
+  // Show iter comparisons
+  const iterCmpHtml = iterCmps.slice(0,20).map(ic => {
+    const iterA = iters.find(i=>i.id===ic.iter_a_id);
+    const iterB = iters.find(i=>i.id===ic.iter_b_id);
+    const origGen = resultsData.generations.find(g=>g.id===ic.original_generation_id);
+    return '<div class="iter-cmp-card">'+
+      '<div class="cmp-card-hdr">'+
+      '<span class="cmp-prompt">"'+esc(trunc(ic.prompt_text,50))+'"</span>'+
+      (ic.both_bad?'<span class="both-bad-badge">Both bad</span>':'<span class="wb wb-'+(ic.winner==='A'?'a':'b')+'">'+ic.winner+' wins</span>')+
+      '</div>'+
+      '<div class="iter-cmp-grid">'+
+      (origGen?'<div class="iter-cmp-slot"><div class="label">Original</div><div class="cmp-svg-box"><img src="/api/generations/'+esc(origGen.id)+'/svg" loading="lazy" alt=""></div></div>':'<div class="iter-cmp-slot"></div>')+
+      (iterA?'<div class="iter-cmp-slot"><div class="label">Iter A: '+esc(sm(iterA.model_id))+'</div><div class="cmp-svg-box"><img src="/api/generations/'+esc(iterA.id)+'/svg" loading="lazy" alt=""></div></div>':'<div class="iter-cmp-slot"></div>')+
+      (iterB?'<div class="iter-cmp-slot"><div class="label">Iter B: '+esc(sm(iterB.model_id))+'</div><div class="cmp-svg-box"><img src="/api/generations/'+esc(iterB.id)+'/svg" loading="lazy" alt=""></div></div>':'<div class="iter-cmp-slot"></div>')+
+      '</div>'+
+      (ic.feedback?'<div class="cmp-card-ftr">'+esc(trunc(ic.feedback,120))+'</div>':'')+
+      '</div>';
+  }).join('');
+  document.getElementById('iter-cmp-grid').innerHTML = iterCmpHtml;
+}
+
+async function renderAgreement() {
+  const res = await fetch('/api/runs/'+currentRunId+'/judge-agreement');
+  const data = await res.json();
+  document.getElementById('agree-wrap').innerHTML =
+    '<h3 style="margin-bottom:16px;">LLM vs Human Agreement</h3>'+
+    '<div class="grid3" style="gap:16px;max-width:600px;">'+
+    '<div class="stat-box"><div class="stat-label">Total Judged by Both</div><div class="stat-val">'+(data.total||0)+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">Agreement</div><div class="stat-val" style="color:#4CAF50">'+(data.agree||0)+'</div></div>'+
+    '<div class="stat-box"><div class="stat-label">Agreement Rate</div><div class="stat-val">'+(data.agreementRate||'--')+'%</div></div>'+
+    '</div>'+
+    (data.total===0?'<p style="margin-top:16px;color:var(--stone);font-size:13px;">No comparisons have been judged by both human and LLM yet.</p>':'');
 }
 
 function populateOutFilters() {
@@ -1013,25 +1296,74 @@ function renderOutputs() {
   const mf=document.getElementById('out-mf').value, pf=document.getElementById('out-pf').value;
   const gens=resultsData.generations.filter(g => g.status==='complete' && (!mf||g.model_id===mf) && (!pf||g.prompt_text===pf));
   document.getElementById('out-grid').innerHTML=gens.map(g =>
-    '<div class="svg-thumb" onclick="showSVGModal(\''+esc(g.id)+'\',\''+esc(g.model_id)+'\',\''+esc(g.prompt_text)+'\')">'+
+    '<div class="svg-thumb" onclick="showSVGModal(''+esc(g.id)+'',''+esc(g.model_id)+'',''+esc(g.prompt_text)+'')">'+
     '<div class="svg-thumb-img"><img src="/api/generations/'+esc(g.id)+'/svg" loading="lazy" alt=""></div>'+
     '<div class="svg-thumb-meta"><div class="svg-thumb-model">'+esc(sm(g.model_id))+'</div><div class="svg-thumb-prompt">'+esc(trunc(g.prompt_text,40))+'</div></div></div>'
   ).join('');
+}
+
+// Human Judge
+async function loadHumanJudge() {
+  humanIdx=0;
+  const res = await fetch('/api/runs/'+currentRunId+'/pending-human');
+  humanPending = await res.json();
+  renderHumanJudge();
+}
+
+function renderHumanJudge() {
+  const total = humanPending.length;
+  document.getElementById('human-progress').textContent = humanIdx+' of '+total+' judged';
+  if (humanIdx >= total) {
+    document.getElementById('human-judge-container').innerHTML = '<div class="empty-state"><h3>All comparisons judged</h3><p>'+total+' comparisons reviewed.</p><button class="btn btn-primary" onclick="showPage('results')">Back to Results</button></div>';
+    return;
+  }
+  const cmp = humanPending[humanIdx];
+  document.getElementById('human-judge-container').innerHTML =
+    '<div class="human-cmp-card">'+
+    '<div class="human-cmp-hdr"><h3>"'+esc(trunc(cmp.prompt_text,80))+'"</h3><div style="font-size:11px;color:var(--stone);margin-top:4px;">Comparison '+(humanIdx+1)+' of '+total+'</div></div>'+
+    '<div class="human-cmp-images">'+
+    '<div class="human-img-slot"><div class="label">Model A</div><div class="cmp-svg-box" style="max-width:100%;"><img src="/api/generations/'+esc(cmp.generation_a_id)+'/svg" style="width:100%;height:auto;" alt="Model A"></div>'+
+    '<div class="score-row"><label>Score A</label><input type="range" id="score-a" min="0" max="10" value="5" step="1"><span id="score-a-v" style="min-width:24px;text-align:right;">5</span></div></div>'+
+    '<div class="human-img-slot"><div class="label">Model B</div><div class="cmp-svg-box" style="max-width:100%;"><img src="/api/generations/'+esc(cmp.generation_b_id)+'/svg" style="width:100%;height:auto;" alt="Model B"></div>'+
+    '<div class="score-row"><label>Score B</label><input type="range" id="score-b" min="0" max="10" value="5" step="1"><span id="score-b-v" style="min-width:24px;text-align:right;">5</span></div></div>'+
+    '</div>'+
+    '<div class="human-cmp-footer">'+
+    '<div class="field"><label class="label">Feedback (optional)</label><input type="text" id="human-feedback" placeholder="What could be improved?"></div>'+
+    '<div class="vote-btns">'+
+    '<button class="vote-btn vote-a" onclick="submitHumanVote(''+esc(cmp.id)+'','A')">A is Better</button>'+
+    '<button class="vote-btn vote-b" onclick="submitHumanVote(''+esc(cmp.id)+'','B')">B is Better</button>'+
+    '<button class="vote-btn vote-bb" onclick="submitHumanVote(''+esc(cmp.id)+'','tie')">Tie / Skip</button>'+
+    '</div></div></div>';
+
+  document.getElementById('score-a').oninput = function() { document.getElementById('score-a-v').textContent=this.value; };
+  document.getElementById('score-b').oninput = function() { document.getElementById('score-b-v').textContent=this.value; };
+}
+
+async function submitHumanVote(cmpId, winner) {
+  const scoreA = parseInt(document.getElementById('score-a')?.value)||5;
+  const scoreB = parseInt(document.getElementById('score-b')?.value)||5;
+  const feedback = document.getElementById('human-feedback')?.value||'';
+  await fetch('/api/runs/'+currentRunId+'/human-judge', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({cmp_id:cmpId, winner, score_a:scoreA, score_b:scoreB, feedback})
+  });
+  humanIdx++;
+  renderHumanJudge();
 }
 
 // Export
 function exportJSON() { window.open('/api/runs/'+(document.getElementById('export-bar').dataset.runId||currentRunId)+'/export/json','_blank'); }
 function exportHTML() {
   if(!resultsData) return;
-  const lb=resultsData.leaderboard.map((row,i)=>'<tr><td>'+(i+1)+'</td><td>'+row.model+'</td><td>'+row.elo+'</td><td>'+(row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'—')+'</td><td>'+row.wins+'/'+row.losses+'/'+row.ties+'</td><td>'+(row.avgScore??'—')+'</td></tr>').join('');
+  const lb=resultsData.leaderboard.map((row,i)=>'<tr><td>'+(i+1)+'</td><td>'+row.model+'</td><td>'+row.elo+'</td><td>'+(row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'--')+'</td><td>'+row.wins+'/'+row.losses+'/'+row.ties+'</td><td>'+(row.avgScore??'--')+'</td></tr>').join('');
   const models=resultsData.models, hm=resultsData.heatmap;
   const hmCols=models.map(m=>'<th>'+sm(m)+'</th>').join('');
-  const hmRows=models.map(rm=>'<tr><th>'+sm(rm)+'</th>'+models.map(cm=>{if(rm===cm) return '<td style="background:#f5f5f5;">N/A</td>';const v=hm[rm]?.[cm];if(v==null) return '<td>—</td>';const bg=v>.5?'rgba(232,77,47,'+v+')':'rgba(76,175,74,'+(1-v)+')';return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';}).join('')+'</tr>').join('');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results — '+resultsData.run.name+'</title>'+
-    '<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'+
-    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Syne",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Syne",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}</style></head>'+
-    '<body><div style="font-size:11px;color:#999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">PathScore</div>'+
-    '<h1>'+resultsData.run.name+'</h1><p style="color:#999;margin-bottom:48px">'+models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+new Date(resultsData.run.created_at).toLocaleDateString()+'</p>'+
+  const hmRows=models.map(rm=>'<tr><th>'+sm(rm)+'</th>'+models.map(cm=>{if(rm===cm) return '<td style="background:#f5f5f5;">N/A</td>';const v=hm[rm]?.[cm];if(v==null) return '<td>--</td>';const bg=v>.5?'rgba(232,77,47,'+v+')':'rgba(76,175,74,'+(1-v)+')';return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';}).join('')+'</tr>').join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results - '+resultsData.run.name+'</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Outfit",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}</style></head>'+
+    '<body><h1>'+resultsData.run.name+'</h1><p style="color:#999;margin-bottom:48px">'+models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+new Date(resultsData.run.created_at).toLocaleDateString()+'</p>'+
     '<h2>ELO Leaderboard</h2><table><thead><tr><th>#</th><th>Model</th><th>ELO</th><th>Win Rate</th><th>W/L/T</th><th>Avg Score</th></tr></thead><tbody>'+lb+'</tbody></table>'+
     '<h2>Win Rate Heatmap</h2><table style="width:auto"><thead><tr><th></th>'+hmCols+'</tr></thead><tbody>'+hmRows+'</tbody></table>'+
     '<p style="font-size:11px;color:#999;margin-top:64px">Generated by PathScore on '+new Date().toLocaleString()+'</p></body></html>';

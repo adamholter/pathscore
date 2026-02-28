@@ -16,9 +16,10 @@ if (fs.existsSync('./.env')) {
 const express = require('express');
 const Database = require('better-sqlite3');
 const { v4: uuidv4 } = require('uuid');
+const { Resvg } = require('@resvg/resvg-js');
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 7642;
@@ -31,9 +32,11 @@ db.pragma('journal_mode = WAL');
 
 db.exec(`CREATE TABLE IF NOT EXISTS runs (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, config TEXT NOT NULL,
+  mode TEXT DEFAULT 'standard',
   status TEXT NOT NULL DEFAULT 'draft', created_at INTEGER NOT NULL,
   started_at INTEGER, completed_at INTEGER, error TEXT
 )`);
+
 db.exec(`CREATE TABLE IF NOT EXISTS generations (
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL, model_id TEXT NOT NULL,
   prompt_id TEXT NOT NULL, prompt_text TEXT NOT NULL, svg_content TEXT,
@@ -41,6 +44,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS generations (
   status TEXT NOT NULL DEFAULT 'pending', error TEXT,
   created_at INTEGER NOT NULL, completed_at INTEGER
 )`);
+
 db.exec(`CREATE TABLE IF NOT EXISTS comparisons (
   id TEXT PRIMARY KEY, run_id TEXT NOT NULL, prompt_id TEXT NOT NULL,
   prompt_text TEXT NOT NULL, model_a_id TEXT NOT NULL, model_b_id TEXT NOT NULL,
@@ -51,6 +55,32 @@ db.exec(`CREATE TABLE IF NOT EXISTS comparisons (
   status TEXT NOT NULL DEFAULT 'pending', error TEXT,
   created_at INTEGER NOT NULL, completed_at INTEGER
 )`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS iterations (
+  id TEXT PRIMARY KEY, run_id TEXT NOT NULL, parent_generation_id TEXT NOT NULL,
+  model_id TEXT NOT NULL, prompt_id TEXT NOT NULL, prompt_text TEXT NOT NULL,
+  feedback_used TEXT, svg_content TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', error TEXT,
+  created_at INTEGER NOT NULL, completed_at INTEGER
+)`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS iteration_comparisons (
+  id TEXT PRIMARY KEY, run_id TEXT NOT NULL, prompt_id TEXT NOT NULL,
+  prompt_text TEXT NOT NULL, original_generation_id TEXT NOT NULL,
+  iter_a_id TEXT NOT NULL, iter_b_id TEXT NOT NULL,
+  judge_model TEXT NOT NULL, winner TEXT,
+  model_a_score REAL, model_b_score REAL,
+  both_bad INTEGER DEFAULT 0,
+  thought_process TEXT, feedback TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', error TEXT,
+  created_at INTEGER NOT NULL, completed_at INTEGER
+)`);
+
+// Add human_winner/human_feedback columns to comparisons (migration)
+try { db.exec('ALTER TABLE comparisons ADD COLUMN human_winner TEXT'); } catch(e) {}
+try { db.exec('ALTER TABLE comparisons ADD COLUMN human_feedback TEXT'); } catch(e) {}
+// Add mode column to runs (migration)
+try { db.exec("ALTER TABLE runs ADD COLUMN mode TEXT DEFAULT 'standard'"); } catch(e) {}
 
 // ── SSE state ───────────────────────────────────────────────────────────────
 const sseClients = {};
@@ -142,19 +172,40 @@ async function getModels() {
   return modelsCache;
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── SVG Helpers ─────────────────────────────────────────────────────────────
 function extractSVG(text) {
+  // 1. Strip <think>...</think> reasoning blocks
+  text = text.replace(/<think[\s\S]*?<\/think>/gi, '');
+  // 2. Try code fences: ```svg or ```xml
   const cb = text.match(/```(?:svg|xml)?\s*(<svg[\s\S]*?<\/svg>)/i);
   if (cb) return cb[1].trim();
+  // 3. Raw SVG
   const raw = text.match(/<svg[\s\S]*?<\/svg>/i);
   if (raw) return raw[0].trim();
+  // 4. If text itself starts with <svg (might lack closing tag)
+  if (text.trim().startsWith('<svg')) return text.trim();
   return null;
+}
+
+function svgToPngDataUrl(svgContent) {
+  try {
+    const resvg = new Resvg(svgContent, {
+      fitTo: { mode: 'width', value: 400 },
+      background: 'white',
+    });
+    const png = resvg.render().asPng();
+    return 'data:image/png;base64,' + png.toString('base64');
+  } catch(e) {
+    // fallback: return SVG data url
+    return 'data:image/svg+xml;base64,' + Buffer.from(svgContent).toString('base64');
+  }
 }
 
 function svgToDataUrl(svg) {
   return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
 }
 
+// ── ELO & Stats ─────────────────────────────────────────────────────────────
 function calcELO(comparisons, models) {
   const K = 32;
   const ratings = Object.fromEntries(models.map(m => [m, 1000]));
@@ -211,76 +262,8 @@ function calcHeatmap(comparisons, models) {
   return matrix;
 }
 
-// ── Benchmark execution ─────────────────────────────────────────────────────
-async function runBenchmark(runId) {
-  const runRow = db.prepare('SELECT * FROM runs WHERE id=?').get(runId);
-  if (!runRow) return;
-  const config = JSON.parse(runRow.config);
-  const { models, prompts, judge } = config;
-  const modelIds = models.map(m => m.id || m);
-
-  const abortCtrl = new AbortController();
-  runAbortControllers[runId] = abortCtrl;
-  db.prepare(`UPDATE runs SET status='running', started_at=? WHERE id=?`).run(Date.now(), runId);
-  emit(runId, 'run_start', { runId, modelIds, promptCount: prompts.length });
-
-  try {
-    // Phase 1: Generate all SVGs in parallel
-    const genPromises = [];
-    for (const model of models) {
-      const modelId = model.id || model;
-      for (const prompt of prompts) {
-        genPromises.push(generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal));
-      }
-    }
-    await Promise.allSettled(genPromises);
-
-    if (abortCtrl.signal.aborted) {
-      db.prepare(`UPDATE runs SET status='stopped', completed_at=? WHERE id=?`).run(Date.now(), runId);
-      emit(runId, 'run_stopped', { runId });
-      return;
-    }
-
-    // Phase 2: Pairwise judgments
-    const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
-    const byPrompt = {};
-    for (const g of gens) {
-      if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
-      byPrompt[g.prompt_id].push(g);
-    }
-
-    const cmpPromises = [];
-    for (const [, pg] of Object.entries(byPrompt)) {
-      for (let i = 0; i < pg.length; i++) {
-        for (let j = i + 1; j < pg.length; j++) {
-          const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
-          const judgeRuns = judge?.runs || 1;
-          for (let r = 1; r <= judgeRuns; r++) {
-            cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', r, abortCtrl.signal));
-          }
-        }
-      }
-    }
-    await Promise.allSettled(cmpPromises);
-
-    if (abortCtrl.signal.aborted) {
-      db.prepare(`UPDATE runs SET status='stopped', completed_at=? WHERE id=?`).run(Date.now(), runId);
-      emit(runId, 'run_stopped', { runId });
-      return;
-    }
-
-    db.prepare(`UPDATE runs SET status='complete', completed_at=? WHERE id=?`).run(Date.now(), runId);
-    emit(runId, 'run_complete', { runId });
-  } catch (err) {
-    console.error('[runBenchmark]', err.message);
-    db.prepare(`UPDATE runs SET status='error', completed_at=?, error=? WHERE id=?`).run(Date.now(), err.message, runId);
-    emit(runId, 'run_error', { runId, error: err.message });
-  } finally {
-    delete runAbortControllers[runId];
-  }
-}
-
-async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, signal) {
+// ── Generation helper ────────────────────────────────────────────────────────
+async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, signal, extraMessages) {
   const genId = uuidv4();
   db.prepare(`INSERT INTO generations (id, run_id, model_id, prompt_id, prompt_text, status, created_at)
     VALUES (?, ?, ?, ?, ?, 'generating', ?)`).run(genId, runId, modelId, prompt.id, prompt.text, Date.now());
@@ -288,12 +271,14 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
 
   const t0 = Date.now();
   try {
+    const messages = extraMessages || [
+      { role: 'system', content: 'You are an expert SVG artist. Generate clean, well-structured SVG code. Respond with ONLY the SVG code — no explanation, no markdown fences, just the raw <svg>...</svg> element.' },
+      { role: 'user', content: `Generate an SVG image depicting: ${prompt.text}\n\nRequirements:\n- Use viewBox="0 0 400 400"\n- Make it visually detailed and accurate\n- No scripts, no HTML, SVG only\n- Output ONLY the <svg> element` },
+    ];
+
     const body = {
       model: modelId,
-      messages: [
-        { role: 'system', content: 'You are an expert SVG artist. Generate clean, well-structured SVG code. Respond with ONLY the SVG code — no explanation, no markdown fences, just the raw <svg>...</svg> element.' },
-        { role: 'user', content: `Generate an SVG image depicting: ${prompt.text}\n\nRequirements:\n- Use viewBox="0 0 400 400"\n- Make it visually detailed and accurate\n- No scripts, no HTML, SVG only\n- Output ONLY the <svg> element` },
-      ],
+      messages,
       max_tokens: config.generation?.max_tokens || 4096,
       temperature: config.generation?.temperature ?? 0.7,
     };
@@ -306,15 +291,17 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
     db.prepare(`UPDATE generations SET svg_content=?, generation_time_ms=?, tokens_prompt=?, tokens_completion=?, status='complete', completed_at=? WHERE id=?`)
       .run(svg, elapsed, result.usage?.prompt_tokens || 0, result.usage?.completion_tokens || 0, Date.now(), genId);
     emit(runId, 'generation_complete', { genId, modelId, promptId: prompt.id, promptText: prompt.text, svgPreview: svg?.substring(0, 300), timeMs: elapsed });
+    return genId;
   } catch (err) {
-    if (signal.aborted) return;
+    if (signal.aborted) return null;
     db.prepare(`UPDATE generations SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), genId);
     emit(runId, 'generation_error', { genId, modelId, promptId: prompt.id, error: err.message });
+    return null;
   }
 }
 
-async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal) {
-  if (!genA.svg_content || !genB.svg_content) return;
+async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal, extraContext) {
+  if (!genA.svg_content || !genB.svg_content) return null;
   const cmpId = uuidv4();
   db.prepare(`INSERT INTO comparisons (id, run_id, prompt_id, prompt_text, model_a_id, model_b_id,
     generation_a_id, generation_b_id, judge_model, judge_run, status, created_at)
@@ -324,15 +311,20 @@ async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal) {
   emit(runId, 'comparison_start', { cmpId, promptId: genA.prompt_id, promptText: genA.prompt_text, modelA: genA.model_id, modelB: genB.model_id });
 
   try {
+    const pngA = svgToPngDataUrl(genA.svg_content);
+    const pngB = svgToPngDataUrl(genB.svg_content);
+
+    const promptContext = extraContext || `You are evaluating two SVG images for the prompt: "${genA.prompt_text}"`;
+
     const result = await orFetch('/chat/completions', {
       model: judgeModel,
       messages: [{
         role: 'user',
         content: [
-          { type: 'text', text: `You are evaluating two SVG images for the prompt: "${genA.prompt_text}"\n\nModel A:` },
-          { type: 'image_url', image_url: { url: svgToDataUrl(genA.svg_content) } },
+          { type: 'text', text: `${promptContext}\n\nModel A:` },
+          { type: 'image_url', image_url: { url: pngA } },
           { type: 'text', text: 'Model B:' },
-          { type: 'image_url', image_url: { url: svgToDataUrl(genB.svg_content) } },
+          { type: 'image_url', image_url: { url: pngB } },
           { type: 'text', text: `Which better follows the prompt and has better visual quality?\n\nRespond with ONLY this JSON (no markdown):\n{"thought_process":"brief analysis","winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"improvement suggestion"}` },
         ],
       }],
@@ -351,10 +343,430 @@ async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal) {
     db.prepare(`UPDATE comparisons SET winner=?, model_a_score=?, model_b_score=?, thought_process=?, feedback=?, status='complete', completed_at=? WHERE id=?`)
       .run(winner, parsed.model_a_score ?? null, parsed.model_b_score ?? null, parsed.thought_process || null, parsed.feedback || null, Date.now(), cmpId);
     emit(runId, 'comparison_complete', { cmpId, promptId: genA.prompt_id, promptText: genA.prompt_text, modelA: genA.model_id, modelB: genB.model_id, winner, scoreA: parsed.model_a_score, scoreB: parsed.model_b_score, thoughtProcess: parsed.thought_process, feedback: parsed.feedback });
+    return { cmpId, winner, feedback: parsed.feedback, thoughtProcess: parsed.thought_process };
   } catch (err) {
-    if (signal?.aborted) return;
+    if (signal?.aborted) return null;
     db.prepare(`UPDATE comparisons SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), cmpId);
     emit(runId, 'comparison_error', { cmpId, promptId: genA.prompt_id, modelA: genA.model_id, modelB: genB.model_id, error: err.message });
+    return null;
+  }
+}
+
+// ── Standard mode ────────────────────────────────────────────────────────────
+async function runStandard(runId, config, abortCtrl) {
+  const { models, prompts, judge } = config;
+
+  // Phase 1: Generate all SVGs in parallel
+  const genPromises = [];
+  for (const model of models) {
+    const modelId = model.id || model;
+    for (const prompt of prompts) {
+      genPromises.push(generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal));
+    }
+  }
+  await Promise.allSettled(genPromises);
+
+  if (abortCtrl.signal.aborted) return 'stopped';
+
+  // Phase 2: Pairwise judgments
+  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const byPrompt = {};
+  for (const g of gens) {
+    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
+    byPrompt[g.prompt_id].push(g);
+  }
+
+  const cmpPromises = [];
+  for (const [, pg] of Object.entries(byPrompt)) {
+    for (let i = 0; i < pg.length; i++) {
+      for (let j = i + 1; j < pg.length; j++) {
+        const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
+        const judgeRuns = judge?.runs || 1;
+        for (let r = 1; r <= judgeRuns; r++) {
+          cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', r, abortCtrl.signal));
+        }
+      }
+    }
+  }
+  await Promise.allSettled(cmpPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  return 'complete';
+}
+
+// ── Feedback Iteration mode ──────────────────────────────────────────────────
+async function runFeedbackIteration(runId, config, abortCtrl) {
+  const { models, prompts, judge } = config;
+  const iterModels = config.iteration_models || models;
+
+  // Phase 1 & 2: Standard run
+  const phase12Result = await runStandard(runId, config, abortCtrl);
+  if (phase12Result === 'stopped') return 'stopped';
+
+  emit(runId, 'phase_start', { phase: 3, label: 'Generating iterations based on feedback' });
+
+  // Phase 3: For each prompt, find winning generation and use feedback to iterate
+  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const cmps = db.prepare(`SELECT * FROM comparisons WHERE run_id=? AND status='complete'`).all(runId);
+
+  // Per prompt: find most wins
+  const byPrompt = {};
+  for (const g of gens) {
+    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = { gens: [], wins: {} };
+    byPrompt[g.prompt_id].gens.push(g);
+  }
+  for (const c of cmps) {
+    if (!c.winner || !byPrompt[c.prompt_id]) continue;
+    const winnerId = c.winner === 'A' ? c.generation_a_id : c.winner === 'B' ? c.generation_b_id : null;
+    if (winnerId) {
+      if (!byPrompt[c.prompt_id].wins[winnerId]) byPrompt[c.prompt_id].wins[winnerId] = 0;
+      byPrompt[c.prompt_id].wins[winnerId]++;
+    }
+  }
+
+  const iterPromises = [];
+  for (const [promptId, data] of Object.entries(byPrompt)) {
+    const { gens: promptGens, wins } = data;
+    // Find best generation (most wins)
+    let bestGen = promptGens[0];
+    let bestWins = wins[bestGen?.id] || 0;
+    for (const g of promptGens) {
+      const w = wins[g.id] || 0;
+      if (w > bestWins) { bestWins = w; bestGen = g; }
+    }
+    if (!bestGen) continue;
+
+    // Find best feedback for this generation
+    const bestCmp = cmps.find(c =>
+      c.prompt_id === promptId &&
+      (c.generation_a_id === bestGen.id || c.generation_b_id === bestGen.id) &&
+      c.feedback
+    );
+    const feedback = bestCmp?.feedback || 'Improve visual quality, accuracy, and detail.';
+
+    // Generate improved versions with each iteration model
+    for (const iterModelObj of iterModels) {
+      const iterModelId = iterModelObj.id || iterModelObj;
+      iterPromises.push((async () => {
+        const iterId = uuidv4();
+        db.prepare(`INSERT INTO iterations (id, run_id, parent_generation_id, model_id, prompt_id, prompt_text, feedback_used, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'generating', ?)`).run(iterId, runId, bestGen.id, iterModelId, promptId, bestGen.prompt_text, feedback, Date.now());
+        emit(runId, 'iteration_start', { iterId, modelId: iterModelId, promptId, feedback });
+
+        try {
+          const messages = [
+            { role: 'system', content: 'You are an expert SVG artist. Improve the given SVG based on the feedback provided. Respond with ONLY the improved SVG code.' },
+            { role: 'user', content: [
+              { type: 'text', text: `Original SVG prompt: ${bestGen.prompt_text}\n\nFeedback for improvement: ${feedback}\n\nOriginal SVG:\n${bestGen.svg_content}\n\nPlease create an improved version of this SVG based on the feedback. Output ONLY the <svg> element.` }
+            ]},
+          ];
+          const body = { model: iterModelId, messages, max_tokens: config.generation?.max_tokens || 4096, temperature: 0.7 };
+          const result = await orStream('/chat/completions', body, () => {}, abortCtrl.signal);
+          const svg = extractSVG(result.content) || result.content.trim();
+          db.prepare(`UPDATE iterations SET svg_content=?, status='complete', completed_at=? WHERE id=?`).run(svg, Date.now(), iterId);
+          emit(runId, 'iteration_complete', { iterId, modelId: iterModelId, promptId });
+        } catch(err) {
+          db.prepare(`UPDATE iterations SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), iterId);
+          emit(runId, 'iteration_error', { iterId, modelId: iterModelId, error: err.message });
+        }
+      })());
+    }
+  }
+  await Promise.allSettled(iterPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+
+  // Phase 4: Judge iteration pairs
+  emit(runId, 'phase_start', { phase: 4, label: 'Judging iterations' });
+  const iters = db.prepare(`SELECT * FROM iterations WHERE run_id=? AND status='complete'`).all(runId);
+  const itersByPrompt = {};
+  for (const it of iters) {
+    if (!itersByPrompt[it.prompt_id]) itersByPrompt[it.prompt_id] = [];
+    itersByPrompt[it.prompt_id].push(it);
+  }
+
+  const iterCmpPromises = [];
+  for (const [promptId, promptIters] of Object.entries(itersByPrompt)) {
+    // Find original gen for this prompt
+    const origGen = db.prepare(`SELECT * FROM generations WHERE run_id=? AND prompt_id=? AND status='complete' LIMIT 1`).get(runId, promptId);
+    if (!origGen || !origGen.svg_content) continue;
+
+    for (let i = 0; i < promptIters.length; i++) {
+      for (let j = i + 1; j < promptIters.length; j++) {
+        const itA = promptIters[i], itB = promptIters[j];
+        iterCmpPromises.push((async () => {
+          if (!itA.svg_content || !itB.svg_content) return;
+          const icmpId = uuidv4();
+          db.prepare(`INSERT INTO iteration_comparisons (id, run_id, prompt_id, prompt_text, original_generation_id, iter_a_id, iter_b_id, judge_model, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'judging', ?)`).run(
+            icmpId, runId, promptId, origGen.prompt_text, origGen.id, itA.id, itB.id, judge?.model || 'google/gemini-3-flash-preview', Date.now());
+
+          try {
+            const origPng = svgToPngDataUrl(origGen.svg_content);
+            const pngA = svgToPngDataUrl(itA.svg_content);
+            const pngB = svgToPngDataUrl(itB.svg_content);
+
+            const result = await orFetch('/chat/completions', {
+              model: judge?.model || 'google/gemini-3-flash-preview',
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'text', text: `You are evaluating improved SVG versions for prompt: "${origGen.prompt_text}"\n\nOriginal feedback: ${itA.feedback_used || 'N/A'}\n\nOriginal SVG:` },
+                  { type: 'image_url', image_url: { url: origPng } },
+                  { type: 'text', text: 'Improved version A:' },
+                  { type: 'image_url', image_url: { url: pngA } },
+                  { type: 'text', text: 'Improved version B:' },
+                  { type: 'image_url', image_url: { url: pngB } },
+                  { type: 'text', text: 'Which improved version is better? Note: if BOTH improved versions are WORSE than the original, set both_bad to 1.\n\nRespond with ONLY this JSON:\n{"thought_process":"analysis","winner":"A" or "B","model_a_score":0-10,"model_b_score":0-10,"both_bad":0 or 1,"feedback":"notes"}' },
+                ],
+              }],
+              max_tokens: 1024,
+              temperature: 0.1,
+            });
+
+            const content = result.choices?.[0]?.message?.content || '';
+            let parsed = {};
+            try { const m = content.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); } catch(_) {}
+            const winner = ['A','B'].includes(parsed.winner) ? parsed.winner : 'A';
+            const bothBad = parsed.both_bad ? 1 : 0;
+            db.prepare(`UPDATE iteration_comparisons SET winner=?, model_a_score=?, model_b_score=?, both_bad=?, thought_process=?, feedback=?, status='complete', completed_at=? WHERE id=?`)
+              .run(winner, parsed.model_a_score ?? null, parsed.model_b_score ?? null, bothBad, parsed.thought_process || null, parsed.feedback || null, Date.now(), icmpId);
+            emit(runId, 'iter_comparison_complete', { icmpId, promptId, modelA: itA.model_id, modelB: itB.model_id, winner, bothBad });
+          } catch(err) {
+            db.prepare(`UPDATE iteration_comparisons SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), icmpId);
+          }
+        })());
+      }
+    }
+  }
+  await Promise.allSettled(iterCmpPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  return 'complete';
+}
+
+// ── Image to SVG mode ────────────────────────────────────────────────────────
+async function runImageToSVG(runId, config, abortCtrl) {
+  const { models, prompts, judge } = config;
+
+  // Phase 1: Generate SVGs from reference images
+  const genPromises = [];
+  for (const model of models) {
+    const modelId = model.id || model;
+    for (const prompt of prompts) {
+      genPromises.push((async () => {
+        const messages = [
+          { role: 'system', content: 'You are an expert SVG artist. Reproduce the given reference image as an SVG. Respond with ONLY the SVG code.' },
+          { role: 'user', content: [
+            { type: 'text', text: `Reproduce this image as SVG as accurately as possible. Use viewBox="0 0 400 400". Output ONLY the <svg> element.${prompt.text ? '\n\nAdditional context: ' + prompt.text : ''}` },
+            ...(prompt.reference_image ? [{ type: 'image_url', image_url: { url: prompt.reference_image } }] : []),
+          ]},
+        ];
+        return generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal, messages);
+      })());
+    }
+  }
+  await Promise.allSettled(genPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+
+  // Phase 2: Judge pairs with reference image context
+  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const byPrompt = {};
+  for (const g of gens) {
+    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
+    byPrompt[g.prompt_id].push(g);
+  }
+
+  const cmpPromises = [];
+  for (const [promptId, pg] of Object.entries(byPrompt)) {
+    const promptObj = prompts.find(p => p.id === promptId);
+    const refImage = promptObj?.reference_image;
+    for (let i = 0; i < pg.length; i++) {
+      for (let j = i + 1; j < pg.length; j++) {
+        const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
+        const judgeRuns = judge?.runs || 1;
+        for (let r = 1; r <= judgeRuns; r++) {
+          cmpPromises.push((async () => {
+            if (!ga.svg_content || !gb.svg_content) return;
+            const cmpId = uuidv4();
+            db.prepare(`INSERT INTO comparisons (id, run_id, prompt_id, prompt_text, model_a_id, model_b_id,
+              generation_a_id, generation_b_id, judge_model, judge_run, status, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'judging', ?)`).run(
+              cmpId, runId, ga.prompt_id, ga.prompt_text,
+              ga.model_id, gb.model_id, ga.id, gb.id, judge?.model || 'google/gemini-3-flash-preview', r, Date.now());
+
+            try {
+              const pngA = svgToPngDataUrl(ga.svg_content);
+              const pngB = svgToPngDataUrl(gb.svg_content);
+              const contentParts = [];
+              if (refImage) {
+                contentParts.push({ type: 'text', text: `You are judging which SVG reproduction is more accurate to the target image. Target image:` });
+                contentParts.push({ type: 'image_url', image_url: { url: refImage } });
+              } else {
+                contentParts.push({ type: 'text', text: `You are evaluating SVG reproductions for prompt: "${ga.prompt_text}"` });
+              }
+              contentParts.push({ type: 'text', text: '\nReproduction A:' });
+              contentParts.push({ type: 'image_url', image_url: { url: pngA } });
+              contentParts.push({ type: 'text', text: 'Reproduction B:' });
+              contentParts.push({ type: 'image_url', image_url: { url: pngB } });
+              contentParts.push({ type: 'text', text: 'Which reproduction is more accurate to the target?\n\nRespond with ONLY this JSON:\n{"thought_process":"analysis","winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"notes"}' });
+
+              const result = await orFetch('/chat/completions', {
+                model: judge?.model || 'google/gemini-3-flash-preview',
+                messages: [{ role: 'user', content: contentParts }],
+                max_tokens: 1024, temperature: 0.1,
+              });
+              const content = result.choices?.[0]?.message?.content || '';
+              let parsed = {};
+              try { const m = content.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); } catch(_) {}
+              const winner = ['A','B','tie'].includes(parsed.winner) ? parsed.winner : null;
+              db.prepare(`UPDATE comparisons SET winner=?, model_a_score=?, model_b_score=?, thought_process=?, feedback=?, status='complete', completed_at=? WHERE id=?`)
+                .run(winner, parsed.model_a_score ?? null, parsed.model_b_score ?? null, parsed.thought_process || null, parsed.feedback || null, Date.now(), cmpId);
+              emit(runId, 'comparison_complete', { cmpId, promptId: ga.prompt_id, modelA: ga.model_id, modelB: gb.model_id, winner });
+            } catch(err) {
+              db.prepare(`UPDATE comparisons SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), cmpId);
+            }
+          })());
+        }
+      }
+    }
+  }
+  await Promise.allSettled(cmpPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  return 'complete';
+}
+
+// ── SVG Editing mode ─────────────────────────────────────────────────────────
+async function runSVGEditing(runId, config, abortCtrl) {
+  const { models, prompts, judge } = config;
+
+  const genPromises = [];
+  for (const model of models) {
+    const modelId = model.id || model;
+    for (const prompt of prompts) {
+      genPromises.push((async () => {
+        const messages = [
+          { role: 'system', content: 'You are an expert SVG editor. Apply the requested edit to the SVG code. Respond with ONLY the complete edited SVG.' },
+          { role: 'user', content: `Edit this SVG according to the instruction:\n\nInstruction: ${prompt.edit_instruction || prompt.text}\n\nOriginal SVG:\n${prompt.source_svg || '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"></svg>'}\n\nOutput ONLY the edited <svg> element.` },
+        ];
+        return generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal, messages);
+      })());
+    }
+  }
+  await Promise.allSettled(genPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+
+  // Judge standard pairs
+  const result = await runStandardJudging(runId, config, abortCtrl);
+  return result;
+}
+
+async function runStandardJudging(runId, config, abortCtrl) {
+  const { judge } = config;
+  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const byPrompt = {};
+  for (const g of gens) {
+    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
+    byPrompt[g.prompt_id].push(g);
+  }
+  const cmpPromises = [];
+  for (const [, pg] of Object.entries(byPrompt)) {
+    for (let i = 0; i < pg.length; i++) {
+      for (let j = i + 1; j < pg.length; j++) {
+        const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
+        const judgeRuns = judge?.runs || 1;
+        for (let r = 1; r <= judgeRuns; r++) {
+          cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', r, abortCtrl.signal));
+        }
+      }
+    }
+  }
+  await Promise.allSettled(cmpPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  return 'complete';
+}
+
+// ── Human Evaluation mode ────────────────────────────────────────────────────
+async function runHumanEval(runId, config, abortCtrl) {
+  const { models, prompts, judge } = config;
+  const runLLMJudge = config.human_eval_llm_judge !== false;
+
+  // Phase 1: Generate SVGs
+  const genPromises = [];
+  for (const model of models) {
+    const modelId = model.id || model;
+    for (const prompt of prompts) {
+      genPromises.push(generateOneSVG(runId, modelId, prompt, config, model.reasoning_effort || null, abortCtrl.signal));
+    }
+  }
+  await Promise.allSettled(genPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+
+  // Phase 2: Create comparison records (pending human review), optionally also run LLM judge
+  const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? AND status='complete'`).all(runId);
+  const byPrompt = {};
+  for (const g of gens) {
+    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];
+    byPrompt[g.prompt_id].push(g);
+  }
+
+  const cmpPromises = [];
+  for (const [, pg] of Object.entries(byPrompt)) {
+    for (let i = 0; i < pg.length; i++) {
+      for (let j = i + 1; j < pg.length; j++) {
+        const [ga, gb] = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];
+        // Insert pending comparison for human
+        const cmpId = uuidv4();
+        db.prepare(`INSERT INTO comparisons (id, run_id, prompt_id, prompt_text, model_a_id, model_b_id,
+          generation_a_id, generation_b_id, judge_model, judge_run, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_human', ?)`).run(
+          cmpId, runId, ga.prompt_id, ga.prompt_text,
+          ga.model_id, gb.model_id, ga.id, gb.id, 'human', 1, Date.now());
+        emit(runId, 'comparison_pending_human', { cmpId, promptId: ga.prompt_id, modelA: ga.model_id, modelB: gb.model_id });
+
+        if (runLLMJudge) {
+          cmpPromises.push(judgeOnePair(runId, ga, gb, judge?.model || 'google/gemini-3-flash-preview', 2, abortCtrl.signal));
+        }
+      }
+    }
+  }
+  await Promise.allSettled(cmpPromises);
+  if (abortCtrl.signal.aborted) return 'stopped';
+  return 'complete';
+}
+
+// ── Main benchmark runner ────────────────────────────────────────────────────
+async function runBenchmark(runId) {
+  const runRow = db.prepare('SELECT * FROM runs WHERE id=?').get(runId);
+  if (!runRow) return;
+  const config = JSON.parse(runRow.config);
+  const mode = runRow.mode || config.mode || 'standard';
+
+  const abortCtrl = new AbortController();
+  runAbortControllers[runId] = abortCtrl;
+  db.prepare(`UPDATE runs SET status='running', started_at=? WHERE id=?`).run(Date.now(), runId);
+  emit(runId, 'run_start', { runId, mode, modelIds: config.models.map(m => m.id || m), promptCount: config.prompts.length });
+
+  try {
+    let result;
+    switch (mode) {
+      case 'feedback_iteration': result = await runFeedbackIteration(runId, config, abortCtrl); break;
+      case 'image_to_svg': result = await runImageToSVG(runId, config, abortCtrl); break;
+      case 'svg_editing': result = await runSVGEditing(runId, config, abortCtrl); break;
+      case 'human_eval': result = await runHumanEval(runId, config, abortCtrl); break;
+      default: result = await runStandard(runId, config, abortCtrl); break;
+    }
+
+    if (result === 'stopped') {
+      db.prepare(`UPDATE runs SET status='stopped', completed_at=? WHERE id=?`).run(Date.now(), runId);
+      emit(runId, 'run_stopped', { runId });
+    } else {
+      db.prepare(`UPDATE runs SET status='complete', completed_at=? WHERE id=?`).run(Date.now(), runId);
+      emit(runId, 'run_complete', { runId });
+    }
+  } catch (err) {
+    console.error('[runBenchmark]', err.message);
+    db.prepare(`UPDATE runs SET status='error', completed_at=?, error=? WHERE id=?`).run(Date.now(), err.message, runId);
+    emit(runId, 'run_error', { runId, error: err.message });
+  } finally {
+    delete runAbortControllers[runId];
   }
 }
 
@@ -373,7 +785,7 @@ app.get('/api/models', async (req, res) => {
 });
 
 app.get('/api/runs', (req, res) => {
-  const runs = db.prepare(`SELECT id, name, status, created_at, started_at, completed_at FROM runs ORDER BY created_at DESC`).all();
+  const runs = db.prepare(`SELECT id, name, status, mode, created_at, started_at, completed_at FROM runs ORDER BY created_at DESC`).all();
   res.json(runs.map(r => ({
     ...r,
     genTotal: db.prepare(`SELECT COUNT(*) as n FROM generations WHERE run_id=?`).get(r.id).n,
@@ -384,11 +796,12 @@ app.get('/api/runs', (req, res) => {
 });
 
 app.post('/api/runs', (req, res) => {
-  const { name, config } = req.body;
+  const { name, config, mode } = req.body;
   if (!name || !config) return res.status(400).json({ error: 'name and config required' });
   const id = uuidv4();
-  db.prepare(`INSERT INTO runs (id, name, config, status, created_at) VALUES (?, ?, ?, 'draft', ?)`).run(id, name, JSON.stringify(config), Date.now());
-  res.json({ id, name, status: 'draft' });
+  const runMode = mode || config.mode || 'standard';
+  db.prepare(`INSERT INTO runs (id, name, config, mode, status, created_at) VALUES (?, ?, ?, ?, 'draft', ?)`).run(id, name, JSON.stringify(config), runMode, Date.now());
+  res.json({ id, name, mode: runMode, status: 'draft' });
 });
 
 app.get('/api/runs/:id', (req, res) => {
@@ -401,13 +814,16 @@ app.put('/api/runs/:id', (req, res) => {
   const run = db.prepare(`SELECT * FROM runs WHERE id=?`).get(req.params.id);
   if (!run) return res.status(404).json({ error: 'not found' });
   if (run.status === 'running') return res.status(400).json({ error: 'Cannot edit running benchmark' });
-  const { name, config } = req.body;
+  const { name, config, mode } = req.body;
   if (name) db.prepare(`UPDATE runs SET name=? WHERE id=?`).run(name, req.params.id);
   if (config) db.prepare(`UPDATE runs SET config=? WHERE id=?`).run(JSON.stringify(config), req.params.id);
+  if (mode) db.prepare(`UPDATE runs SET mode=? WHERE id=?`).run(mode, req.params.id);
   res.json({ ok: true });
 });
 
 app.delete('/api/runs/:id', (req, res) => {
+  db.prepare(`DELETE FROM iteration_comparisons WHERE run_id=?`).run(req.params.id);
+  db.prepare(`DELETE FROM iterations WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM comparisons WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM generations WHERE run_id=?`).run(req.params.id);
   db.prepare(`DELETE FROM runs WHERE id=?`).run(req.params.id);
@@ -419,6 +835,8 @@ app.post('/api/runs/:id/start', async (req, res) => {
   if (!run) return res.status(404).json({ error: 'not found' });
   if (run.status === 'running') return res.status(400).json({ error: 'Already running' });
   if (['complete', 'error', 'stopped'].includes(run.status)) {
+    db.prepare(`DELETE FROM iteration_comparisons WHERE run_id=?`).run(req.params.id);
+    db.prepare(`DELETE FROM iterations WHERE run_id=?`).run(req.params.id);
     db.prepare(`DELETE FROM comparisons WHERE run_id=?`).run(req.params.id);
     db.prepare(`DELETE FROM generations WHERE run_id=?`).run(req.params.id);
     runEventLogs[req.params.id] = [];
@@ -457,6 +875,8 @@ app.get('/api/runs/:id/results', (req, res) => {
   const modelIds = config.models.map(m => m.id || m);
   const gens = db.prepare(`SELECT * FROM generations WHERE run_id=? ORDER BY created_at`).all(req.params.id);
   const cmps = db.prepare(`SELECT * FROM comparisons WHERE run_id=? ORDER BY created_at`).all(req.params.id);
+  const iters = db.prepare(`SELECT * FROM iterations WHERE run_id=? ORDER BY created_at`).all(req.params.id);
+  const iterCmps = db.prepare(`SELECT * FROM iteration_comparisons WHERE run_id=? ORDER BY created_at`).all(req.params.id);
   const elo = calcELO(cmps, modelIds);
   const stats = calcStats(cmps, modelIds);
   const heatmap = calcHeatmap(cmps, modelIds);
@@ -464,7 +884,75 @@ app.get('/api/runs/:id/results', (req, res) => {
     model: m, elo: Math.round(elo[m] || 1000), ...stats[m],
     avgScore: stats[m]?.score_count > 0 ? +(stats[m].score_sum / stats[m].score_count).toFixed(2) : null,
   })).sort((a, b) => b.elo - a.elo);
-  res.json({ run: { ...run, config }, leaderboard, heatmap, models: modelIds, generations: gens, comparisons: cmps });
+
+  // Iteration ELO (for feedback mode)
+  let iterLeaderboard = null;
+  const iterModelIds = config.iteration_models ? config.iteration_models.map(m => m.id || m) : modelIds;
+  if (iters.length > 0) {
+    const iterElo = calcELO(
+      iterCmps.map(c => ({ ...c, model_a_id: iters.find(i=>i.id===c.iter_a_id)?.model_id, model_b_id: iters.find(i=>i.id===c.iter_b_id)?.model_id, status: c.status, winner: c.winner, completed_at: c.completed_at })).filter(c => c.model_a_id && c.model_b_id),
+      iterModelIds
+    );
+    iterLeaderboard = iterModelIds.map(m => ({
+      model: m, elo: Math.round(iterElo[m] || 1000),
+      bothBadCount: iterCmps.filter(c => {
+        const iterA = iters.find(i=>i.id===c.iter_a_id);
+        const iterB = iters.find(i=>i.id===c.iter_b_id);
+        return (iterA?.model_id===m || iterB?.model_id===m) && c.both_bad;
+      }).length,
+    })).sort((a,b) => b.elo - a.elo);
+  }
+
+  res.json({ run: { ...run, config }, leaderboard, heatmap, models: modelIds, generations: gens, comparisons: cmps, iterations: iters, iterationComparisons: iterCmps, iterLeaderboard });
+});
+
+// Human eval routes
+app.get('/api/runs/:id/pending-human', (req, res) => {
+  const cmps = db.prepare(`SELECT c.*, ga.svg_content as svg_a, gb.svg_content as svg_b
+    FROM comparisons c
+    LEFT JOIN generations ga ON ga.id = c.generation_a_id
+    LEFT JOIN generations gb ON gb.id = c.generation_b_id
+    WHERE c.run_id=? AND c.status='pending_human'
+    ORDER BY c.created_at`).all(req.params.id);
+  res.json(cmps);
+});
+
+app.post('/api/runs/:id/human-judge', (req, res) => {
+  const { cmp_id, winner, score_a, score_b, feedback } = req.body;
+  if (!cmp_id || !winner) return res.status(400).json({ error: 'cmp_id and winner required' });
+  const validWinner = ['A','B','tie'].includes(winner) ? winner : null;
+  db.prepare(`UPDATE comparisons SET human_winner=?, model_a_score=?, model_b_score=?, human_feedback=?, status='complete', winner=COALESCE(winner, ?), completed_at=? WHERE id=? AND run_id=?`)
+    .run(validWinner, score_a ?? null, score_b ?? null, feedback || null, validWinner, Date.now(), cmp_id, req.params.id);
+  emit(req.params.id, 'human_judgment', { cmpId: cmp_id, winner: validWinner });
+  res.json({ ok: true });
+});
+
+app.get('/api/runs/:id/judge-agreement', (req, res) => {
+  const cmps = db.prepare(`SELECT * FROM comparisons WHERE run_id=? AND human_winner IS NOT NULL AND winner IS NOT NULL AND status='complete'`).all(req.params.id);
+  const total = cmps.length;
+  const agree = cmps.filter(c => c.human_winner === c.winner).length;
+  res.json({ total, agree, disagree: total - agree, agreementRate: total > 0 ? (agree/total*100).toFixed(1) : null });
+});
+
+app.post('/api/runs/:id/continue', async (req, res) => {
+  const run = db.prepare(`SELECT * FROM runs WHERE id=?`).get(req.params.id);
+  if (!run) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+  // For human eval: judge remaining pending_human comparisons with LLM
+  const config = JSON.parse(run.config);
+  const pending = db.prepare(`SELECT c.*, ga.*, ga.svg_content as svg_content_a, gb.svg_content as svg_content_b
+    FROM comparisons c
+    LEFT JOIN generations ga ON ga.id = c.generation_a_id
+    LEFT JOIN generations gb ON gb.id = c.generation_b_id
+    WHERE c.run_id=? AND c.status='pending_human'`).all(req.params.id);
+  const abortCtrl = new AbortController();
+  for (const c of pending) {
+    const genA = { id: c.generation_a_id, model_id: c.model_a_id, prompt_id: c.prompt_id, prompt_text: c.prompt_text, svg_content: c.svg_content_a };
+    const genB = { id: c.generation_b_id, model_id: c.model_b_id, prompt_id: c.prompt_id, prompt_text: c.prompt_text, svg_content: c.svg_content_b };
+    // Mark as judging first
+    db.prepare(`UPDATE comparisons SET status='judging' WHERE id=?`).run(c.id);
+    await judgeOnePair(req.params.id, genA, genB, config.judge?.model || 'google/gemini-3-flash-preview', 1, abortCtrl.signal).catch(console.error);
+  }
 });
 
 app.get('/api/generations/:id/svg', (req, res) => {
@@ -479,20 +967,23 @@ app.get('/api/runs/:id/export/json', (req, res) => {
   if (!run) return res.status(404).json({ error: 'not found' });
   const gens = db.prepare(`SELECT * FROM generations WHERE run_id=?`).all(req.params.id);
   const cmps = db.prepare(`SELECT * FROM comparisons WHERE run_id=?`).all(req.params.id);
+  const iters = db.prepare(`SELECT * FROM iterations WHERE run_id=?`).all(req.params.id);
+  const iterCmps = db.prepare(`SELECT * FROM iteration_comparisons WHERE run_id=?`).all(req.params.id);
   res.setHeader('Content-Disposition', `attachment; filename="pathscore-${run.id.slice(0,8)}.json"`);
-  res.json({ run: { ...run, config: JSON.parse(run.config) }, generations: gens, comparisons: cmps, exported_at: Date.now() });
+  res.json({ run: { ...run, config: JSON.parse(run.config) }, generations: gens, comparisons: cmps, iterations: iters, iterationComparisons: iterCmps, exported_at: Date.now() });
 });
 
 app.post('/api/runs/import', (req, res) => {
-  const { run, generations, comparisons } = req.body;
+  const { run, generations, comparisons, iterations, iterationComparisons } = req.body;
   if (!run || !generations) return res.status(400).json({ error: 'invalid import data' });
   const existing = db.prepare(`SELECT id FROM runs WHERE id=?`).get(run.id);
   const runId = existing ? uuidv4() : run.id;
   try {
-    db.prepare(`INSERT INTO runs (id, name, config, status, created_at, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO runs (id, name, config, mode, status, created_at, started_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
       runId, run.name + (existing ? ' (imported)' : ''),
       typeof run.config === 'string' ? run.config : JSON.stringify(run.config),
+      run.mode || 'standard',
       run.status || 'complete', run.created_at || Date.now(), run.started_at || null, run.completed_at || null);
     const ig = db.prepare(`INSERT OR IGNORE INTO generations (id, run_id, model_id, prompt_id, prompt_text, svg_content,
       generation_time_ms, tokens_prompt, tokens_completion, status, error, created_at, completed_at)
