@@ -81,8 +81,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS iteration_comparisons (
 // Add human_winner/human_feedback columns to comparisons (migration)
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_winner TEXT'); } catch(e) {}
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_feedback TEXT'); } catch(e) {}
-// Add mode column to runs (migration)
 try { db.exec("ALTER TABLE runs ADD COLUMN mode TEXT DEFAULT 'standard'"); } catch(e) {}
+
+// On startup: any rows still in 'generating' or 'judging' status are zombies from a crashed run.
+// Mark them as errors so their run can be viewed and the counts resolve correctly.
+db.prepare(`UPDATE generations SET status='error', error='Interrupted (server restart)', completed_at=? WHERE status='generating'`).run(Date.now());
+db.prepare(`UPDATE comparisons SET status='error', error='Interrupted (server restart)', completed_at=? WHERE status='judging'`).run(Date.now());
+// Any runs still 'running' at startup are also stuck — mark complete so results are viewable.
+db.prepare(`UPDATE runs SET status='complete', completed_at=? WHERE status='running'`).run(Date.now());
 
 // ── SSE state ───────────────────────────────────────────────────────────────
 const sseClients = {};
@@ -265,11 +271,20 @@ function calcHeatmap(comparisons, models) {
 }
 
 // ── Generation helper ────────────────────────────────────────────────────────
+const GENERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes per generation
+
 async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, signal, extraMessages) {
   const genId = uuidv4();
   db.prepare(`INSERT INTO generations (id, run_id, model_id, prompt_id, prompt_text, status, created_at)
     VALUES (?, ?, ?, ?, ?, 'generating', ?)`).run(genId, runId, modelId, prompt.id, prompt.text, Date.now());
   emit(runId, 'generation_start', { genId, modelId, promptId: prompt.id, promptText: prompt.text });
+
+  // Combine run abort signal with a per-generation timeout
+  const timeoutCtrl = new AbortController();
+  const timeoutId = setTimeout(() => timeoutCtrl.abort(), GENERATION_TIMEOUT_MS);
+  const combinedSignal = AbortSignal.any
+    ? AbortSignal.any([signal, timeoutCtrl.signal])
+    : timeoutCtrl.signal; // fallback for older Node
 
   const t0 = Date.now();
   try {
@@ -285,7 +300,8 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
     };
     if (reasoningEffort) body.reasoning = { effort: reasoningEffort };
 
-    const result = await orStream('/chat/completions', body, () => {}, signal);
+    const result = await orStream('/chat/completions', body, () => {}, combinedSignal);
+    clearTimeout(timeoutId);
     const svg = extractSVG(result.content) || result.content.trim();
     const elapsed = Date.now() - t0;
 
@@ -294,9 +310,11 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
     emit(runId, 'generation_complete', { genId, modelId, promptId: prompt.id, promptText: prompt.text, svgPreview: svg?.substring(0, 300), timeMs: elapsed });
     return genId;
   } catch (err) {
+    clearTimeout(timeoutId);
     if (signal.aborted) return null;
-    db.prepare(`UPDATE generations SET status='error', error=?, completed_at=? WHERE id=?`).run(err.message, Date.now(), genId);
-    emit(runId, 'generation_error', { genId, modelId, promptId: prompt.id, error: err.message });
+    const errMsg = timeoutCtrl.signal.aborted ? `Timeout after ${GENERATION_TIMEOUT_MS/1000}s` : err.message;
+    db.prepare(`UPDATE generations SET status='error', error=?, completed_at=? WHERE id=?`).run(errMsg, Date.now(), genId);
+    emit(runId, 'generation_error', { genId, modelId, promptId: prompt.id, error: errMsg });
     return null;
   }
 }

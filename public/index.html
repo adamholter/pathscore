@@ -1052,7 +1052,8 @@ async function loadRuns() {
     const genInfo = r.genTotal ? r.genDone+'/'+r.genTotal+' SVGs' : '';
     const cmpInfo = r.cmpTotal ? r.cmpDone+'/'+r.cmpTotal+' cmps' : '';
     const modeTag = r.mode && r.mode!=='standard' ? '<span style="font-size:10px;background:var(--mist);padding:2px 8px;border-radius:10px;margin-left:8px;">'+esc(r.mode.replace('_',' '))+'</span>' : '';
-    const actions = (r.status==='complete' ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(\''+r.id+'\')">Results</button>' : '') +
+    const hasResults = r.status==='complete' || r.status==='running';
+    const actions = (hasResults ? '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();viewResults(\''+r.id+'\')">'+(r.status==='running'?'Partial Results':'Results')+'</button>' : '') +
       (r.status==='draft' ? '<button class="btn btn-accent btn-sm" onclick="event.stopPropagation();editAndRun(\''+r.id+'\')">Run</button>' : '') +
       '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRun(\''+r.id+'\',this)">&#10005;</button>';
     return '<div class="run-card" onclick="openRun(\''+r.id+'\',\''+r.status+'\')">'+
@@ -1064,8 +1065,7 @@ async function loadRuns() {
 }
 
 function openRun(id, status) {
-  if (status==='complete') viewResults(id);
-  else if (status==='running') openLiveRun(id);
+  if (status==='complete' || status==='running') viewResults(id);
   else editAndRun(id);
 }
 
