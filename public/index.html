@@ -970,7 +970,8 @@ function selectJudge(id) {
   updateSum();
 }
 
-document.addEventListener('click', e => {
+// Use mousedown so the close check fires before innerHTML replacement destroys the target element
+document.addEventListener('mousedown', e => {
   if (!e.target.closest('#model-search') && !e.target.closest('#model-dd')) { const d=document.getElementById('model-dd'); if(d) d.style.display='none'; }
   if (!e.target.closest('#judge-search') && !e.target.closest('#judge-dd')) { const d=document.getElementById('judge-dd'); if(d) d.style.display='none'; }
   if (!e.target.closest('#iter-model-search') && !e.target.closest('#iter-model-dd')) { const d=document.getElementById('iter-model-dd'); if(d) d.style.display='none'; }

@@ -17,6 +17,8 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const { v4: uuidv4 } = require('uuid');
 const { Resvg } = require('@resvg/resvg-js');
+// node-fetch is ESM-only; cache the import promise so it resolves once
+const fetchPromise = import('node-fetch').then(m => m.default);
 
 const app = express();
 app.use(express.json({ limit: '20mb' }));
@@ -101,7 +103,7 @@ function emit(runId, type, data) {
 
 // ── OpenRouter helpers ──────────────────────────────────────────────────────
 async function orFetch(path, body) {
-  const { default: fetch } = await import('node-fetch');
+  const fetch = await fetchPromise;
   const res = await fetch(`${OPENROUTER_BASE}${path}`, {
     method: 'POST',
     headers: {
@@ -118,7 +120,7 @@ async function orFetch(path, body) {
 }
 
 async function orStream(path, body, onChunk, signal) {
-  const { default: fetch } = await import('node-fetch');
+  const fetch = await fetchPromise;
   const res = await fetch(`${OPENROUTER_BASE}${path}`, {
     method: 'POST',
     headers: {
@@ -162,7 +164,7 @@ let modelsCache = null;
 let modelsCacheTime = 0;
 async function getModels() {
   if (modelsCache && Date.now() - modelsCacheTime < 3600000) return modelsCache;
-  const { default: fetch } = await import('node-fetch');
+  const fetch = await fetchPromise;
   const res = await fetch(`${OPENROUTER_BASE}/models`, {
     headers: { 'Authorization': `Bearer ${OPENROUTER_API_KEY}` },
   });
