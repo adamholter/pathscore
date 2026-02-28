@@ -679,7 +679,7 @@ async function deleteRun(id, btn) {
 // CONFIGURE
 function startNewBenchmark() {
   editRunId = null;
-  cfg = { mode:'standard', models:[{id:'qwen/qwen3-235b-a22b',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
+  cfg = { mode:'standard', models:[{id:'qwen/qwen3.5-122b-a10b',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
   document.getElementById('cfg-title').textContent = 'New Benchmark';
   document.getElementById('bench-name').value = cfg.name;
   document.getElementById('judge-search').value = cfg.judge.model;
