@@ -359,10 +359,7 @@ table.lb tr:hover td{background:var(--mist);}
               Advanced generation settings
             </button>
             <div class="adv-section" id="adv-gen">
-              <div class="grid2">
-                <div class="field"><label class="label">Max Tokens</label><input type="number" id="gen-max-tokens" value="4096" min="256" max="16384"></div>
-                <div class="field"><label class="label">Temperature</label><div class="rr"><input type="range" id="gen-temp" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('gen-temp-v').textContent=this.value"><span class="rv" id="gen-temp-v">0.7</span></div></div>
-              </div>
+              <div class="field"><label class="label">Temperature</label><div class="rr"><input type="range" id="gen-temp" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('gen-temp-v').textContent=this.value"><span class="rv" id="gen-temp-v">0.7</span></div></div>
             </div>
           </div>
 
@@ -432,6 +429,15 @@ table.lb tr:hover td{background:var(--mist);}
           <div class="config-panel" id="panel-4">
             <div style="margin-bottom:32px;"><h2>Benchmark Settings</h2></div>
             <div class="field"><label class="label">Benchmark Name</label><input type="text" id="bench-name" placeholder="e.g. Small models - Feb 2026"></div>
+            <hr class="divider">
+            <div style="margin-bottom:24px;">
+              <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:12px;">Saved Configs</div>
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" id="save-cfg-name" placeholder="Config name..." style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+                <button class="btn btn-outline btn-sm" onclick="saveConfig()">Save Config</button>
+              </div>
+              <div id="saved-configs-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
             <hr class="divider">
             <div id="bench-estimate" style="background:var(--mist);border-radius:6px;padding:20px;"></div>
           </div>
@@ -588,7 +594,7 @@ table.lb tr:hover td{background:var(--mist);}
 // State
 let currentRunId = null;
 let sseConn = null;
-let cfg = { mode:'standard', models:[], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'' };
+let cfg = { mode:'standard', models:[], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{temperature:0.7}, name:'' };
 let editRunId = null;
 let allModels = [];
 let modelOffset = 0;
@@ -673,7 +679,7 @@ async function deleteRun(id, btn) {
 // CONFIGURE
 function startNewBenchmark() {
   editRunId = null;
-  cfg = { mode:'standard', models:[{id:'google/gemini-2.5-flash',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{max_tokens:4096,temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
+  cfg = { mode:'standard', models:[{id:'qwen/qwen3-235b-a22b',reasoning_effort:null}], prompts:[], judge:{model:'google/gemini-3-flash-preview',runs:1}, generation:{temperature:0.7}, name:'Benchmark '+new Date().toLocaleDateString() };
   document.getElementById('cfg-title').textContent = 'New Benchmark';
   document.getElementById('bench-name').value = cfg.name;
   document.getElementById('judge-search').value = cfg.judge.model;
@@ -726,7 +732,7 @@ function selectMode(mode) {
 function showStep(idx) {
   document.querySelectorAll('.config-step').forEach((el,i) => el.classList.toggle('active',i===idx));
   document.querySelectorAll('.config-panel').forEach((el,i) => el.classList.toggle('active',i===idx));
-  if (idx===4) updateEstimate();
+  if (idx===4) { updateEstimate(); renderSavedConfigs(); }
   updateSum();
 }
 
@@ -751,7 +757,6 @@ function updateEstimate() {
 async function saveAndRun() {
   const name = document.getElementById('bench-name').value.trim() || 'Benchmark '+new Date().toLocaleDateString();
   cfg.name = name;
-  cfg.generation.max_tokens = parseInt(document.getElementById('gen-max-tokens').value)||4096;
   cfg.generation.temperature = parseFloat(document.getElementById('gen-temp').value)||0.7;
   cfg.judge.runs = parseInt(document.getElementById('judge-runs').value)||1;
   if (cfg.mode === 'human_eval') cfg.human_eval_llm_judge = document.getElementById('human-llm-judge').checked;
@@ -783,6 +788,59 @@ async function saveDraft() {
   toast('Draft saved'); loadRuns();
 }
 
+// Saved configs
+function getSavedConfigs() {
+  try { return JSON.parse(localStorage.getItem('pathscore_configs')||'[]'); } catch(e) { return []; }
+}
+function saveConfig() {
+  const name = document.getElementById('save-cfg-name').value.trim() || cfg.name || 'Config '+Date.now();
+  const saved = getSavedConfigs();
+  saved.unshift({ name, cfg: JSON.parse(JSON.stringify(cfg)), savedAt: Date.now() });
+  localStorage.setItem('pathscore_configs', JSON.stringify(saved.slice(0,20)));
+  document.getElementById('save-cfg-name').value = '';
+  renderSavedConfigs();
+  toast('Config saved: '+name);
+}
+function loadConfig(idx) {
+  const saved = getSavedConfigs();
+  const entry = saved[idx];
+  if (!entry) return;
+  cfg = JSON.parse(JSON.stringify(entry.cfg));
+  document.getElementById('bench-name').value = cfg.name||'';
+  document.getElementById('gen-temp').value = cfg.generation?.temperature||0.7;
+  document.getElementById('gen-temp-v').textContent = cfg.generation?.temperature||0.7;
+  document.getElementById('judge-search').value = cfg.judge?.model||'';
+  document.getElementById('judge-sel').textContent = 'Judge: '+(cfg.judge?.model||'none');
+  document.getElementById('judge-runs').value = cfg.judge?.runs||1;
+  document.getElementById('judge-runs-v').textContent = (cfg.judge?.runs||1)+' run'+((cfg.judge?.runs||1)>1?'s':'');
+  selectMode(cfg.mode||'standard');
+  renderSelModels();
+  renderPromptList();
+  updateSum();
+  showStep(0);
+  toast('Loaded: '+entry.name);
+}
+function deleteConfig(idx) {
+  const saved = getSavedConfigs();
+  saved.splice(idx,1);
+  localStorage.setItem('pathscore_configs', JSON.stringify(saved));
+  renderSavedConfigs();
+  toast('Config deleted');
+}
+function renderSavedConfigs() {
+  const saved = getSavedConfigs();
+  const el = document.getElementById('saved-configs-list');
+  if (!el) return;
+  if (!saved.length) { el.innerHTML = '<p style="font-size:12px;color:var(--stone);">No saved configs yet.</p>'; return; }
+  el.innerHTML = saved.map((s,i) =>
+    '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--mist);border-radius:4px;">'+
+    '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(s.name)+'</div>'+
+    '<div style="font-size:11px;color:var(--stone);">'+(s.cfg.models||[]).length+' models · '+(s.cfg.prompts||[]).length+' prompts · '+esc(s.cfg.mode||'standard')+'</div></div>'+
+    '<button class="btn btn-outline btn-sm" onclick="loadConfig('+i+')">Load</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="deleteConfig('+i+')" style="color:var(--stone);">&#215;</button></div>'
+  ).join('');
+}
+
 // Model search
 async function initModelSearch() {
   modelOffset=0; modelQ='';
@@ -811,28 +869,35 @@ async function loadMoreModels() {
   renderModelOpts(allModels, (modelOffset+30)<d.total);
 }
 function renderModelOpts(models, hasMore) {
-  const selIds = cfg.models.map(m => m.id||m);
+  const selIds = new Set(cfg.models.map(m => m.id||m));
+  const counts = {};
+  cfg.models.forEach(m => { const id=m.id||m; counts[id]=(counts[id]||0)+1; });
   const modelsWithMeta = models.map(m => {
     const ctxStr = m.context_length ? Math.round(m.context_length/1000)+'k' : '';
     const priceStr = m.pricing?.prompt ? '$'+(parseFloat(m.pricing.prompt)*1000000).toFixed(3)+'/M' : '';
     const meta = [ctxStr, priceStr].filter(Boolean).join(' · ');
     return { m, meta };
   });
-  document.getElementById('model-options').innerHTML = modelsWithMeta.map(({m,meta}) =>
-    '<div class="model-option'+(selIds.includes(m.id)?' selected':'')+'" onclick="toggleModel(\''+esc(m.id)+'\')">'+
-    '<div><div class="model-option-id">'+esc(m.id)+'</div>'+(m.name&&m.name!==m.id?'<div style="font-size:10px;color:var(--stone);">'+esc(trunc(m.name,40))+'</div>':'')+
-    '</div><div class="model-option-meta">'+esc(meta)+'</div></div>'
-  ).join('');
+  document.getElementById('model-options').innerHTML = modelsWithMeta.map(({m,meta}) => {
+    const cnt = counts[m.id]||0;
+    const badge = cnt>0 ? '<span style="margin-left:auto;background:var(--ink);color:white;font-size:10px;padding:1px 6px;border-radius:10px;flex-shrink:0;">'+cnt+'&#10003;</span>' : '';
+    return '<div class="model-option'+(cnt>0?' selected':'')+'" onclick="toggleModel(\''+esc(m.id)+'\')">'+
+      '<div style="min-width:0;flex:1;"><div class="model-option-id">'+esc(m.id)+'</div>'+(m.name&&m.name!==m.id?'<div style="font-size:10px;color:var(--stone);">'+esc(trunc(m.name,40))+'</div>':'')+
+      '</div><div style="display:flex;align-items:center;gap:8px;"><div class="model-option-meta">'+esc(meta)+'</div>'+badge+'</div></div>';
+  }).join('');
   const lm = document.getElementById('model-load-more');
   lm.style.display = hasMore ? 'block' : 'none';
 }
 function toggleModel(id) {
-  const idx = cfg.models.findIndex(m => (m.id||m)===id);
-  if (idx>=0) cfg.models.splice(idx,1);
-  else cfg.models.push({id,reasoning_effort:null});
+  // Always add a new instance — duplicates with different reasoning effort are allowed
+  cfg.models.push({id, reasoning_effort:null});
   renderSelModels();
+  // Re-render opts but keep scroll position in the dropdown
+  const dd = document.getElementById('model-options');
+  const scrollTop = dd.scrollTop;
   const lm = document.getElementById('model-load-more');
   renderModelOpts(allModels, lm.style.display!=='none');
+  dd.scrollTop = scrollTop;
   updateSum();
 }
 function renderSelModels() {

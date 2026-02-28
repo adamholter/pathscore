@@ -279,7 +279,6 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
     const body = {
       model: modelId,
       messages,
-      max_tokens: config.generation?.max_tokens || 4096,
       temperature: config.generation?.temperature ?? 0.7,
     };
     if (reasoningEffort) body.reasoning = { effort: reasoningEffort };
@@ -328,7 +327,6 @@ async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal, ext
           { type: 'text', text: `Which better follows the prompt and has better visual quality?\n\nRespond with ONLY this JSON (no markdown):\n{"thought_process":"brief analysis","winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"improvement suggestion"}` },
         ],
       }],
-      max_tokens: 1024,
       temperature: 0.1,
     });
 
@@ -459,7 +457,7 @@ async function runFeedbackIteration(runId, config, abortCtrl) {
               { type: 'text', text: `Original SVG prompt: ${bestGen.prompt_text}\n\nFeedback for improvement: ${feedback}\n\nOriginal SVG:\n${bestGen.svg_content}\n\nPlease create an improved version of this SVG based on the feedback. Output ONLY the <svg> element.` }
             ]},
           ];
-          const body = { model: iterModelId, messages, max_tokens: config.generation?.max_tokens || 4096, temperature: 0.7 };
+          const body = { model: iterModelId, messages, temperature: 0.7 };
           const result = await orStream('/chat/completions', body, () => {}, abortCtrl.signal);
           const svg = extractSVG(result.content) || result.content.trim();
           db.prepare(`UPDATE iterations SET svg_content=?, status='complete', completed_at=? WHERE id=?`).run(svg, Date.now(), iterId);
@@ -518,7 +516,6 @@ async function runFeedbackIteration(runId, config, abortCtrl) {
                   { type: 'text', text: 'Which improved version is better? Note: if BOTH improved versions are WORSE than the original, set both_bad to 1.\n\nRespond with ONLY this JSON:\n{"thought_process":"analysis","winner":"A" or "B","model_a_score":0-10,"model_b_score":0-10,"both_bad":0 or 1,"feedback":"notes"}' },
                 ],
               }],
-              max_tokens: 1024,
               temperature: 0.1,
             });
 
@@ -611,7 +608,7 @@ async function runImageToSVG(runId, config, abortCtrl) {
               const result = await orFetch('/chat/completions', {
                 model: judge?.model || 'google/gemini-3-flash-preview',
                 messages: [{ role: 'user', content: contentParts }],
-                max_tokens: 1024, temperature: 0.1,
+                temperature: 0.1,
               });
               const content = result.choices?.[0]?.message?.content || '';
               let parsed = {};
@@ -1010,7 +1007,6 @@ app.post('/api/generate-prompts', async (req, res) => {
     const result = await orFetch('/chat/completions', {
       model: 'google/gemini-3-flash-preview',
       messages: [{ role: 'user', content: `Generate ${count} diverse SVG benchmark prompts for: "${description}"\n\nMake them specific, visual, and testable. Cover variety: illustrations, icons, logos, data viz, abstract shapes.\nAvoid duplicating: ${existing.map(p => p.text).join(', ')}\n\nRespond ONLY with a JSON array: [{"id":"uuid","text":"prompt text","category":"category"},...]\nCategories: illustration, logo, icon, data-visualization, abstract, typography, scene` }],
-      max_tokens: 2048,
       temperature: 0.8,
     });
     const content = result.choices?.[0]?.message?.content || '[]';
