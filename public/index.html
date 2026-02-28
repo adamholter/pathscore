@@ -272,7 +272,124 @@ table.lb tr:hover td{background:var(--mist);}
 .landing-lb-fill{height:100%;background:var(--ink);border-radius:2px;}
 @media(max-width:900px){.landing-hero{grid-template-columns:1fr;gap:40px;}.landing-steps{grid-template-columns:1fr 1fr;}.landing-features{grid-template-columns:1fr 1fr;}}
 @media(max-width:768px){.config-layout{grid-template-columns:1fr;}.config-sidebar{position:static;}.stats-row{grid-template-columns:1fr 1fr;}.run-cols{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}.mode-cards{grid-template-columns:1fr;}.landing-hero{grid-template-columns:1fr;}.landing-steps{grid-template-columns:1fr 1fr;}.landing-features{grid-template-columns:1fr;}}
+
+/* ── Extension System ─────────────────────────────────────────── */
+.ext-hook-badge{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px;}
+.badge-provider{background:#d4edda;color:#155724;}
+.badge-judge{background:#cce5ff;color:#004085;}
+.badge-mode{background:#fff3cd;color:#856404;}
+.badge-results{background:#f8d7da;color:#721c24;}
+.toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;}
+.toggle-switch input:checked + .toggle-slider{background:var(--ember);}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(16px);}
+.ext-card{border:1.5px solid var(--border);border-radius:6px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;transition:border-color .15s;}
+.ext-card:hover{border-color:var(--stone);}
+.ext-card-body{flex:1;min-width:0;}
+.ext-card-name{font-family:var(--font-h);font-weight:600;font-size:14px;margin-bottom:4px;}
+.ext-card-desc{font-size:12px;color:var(--stone);margin-bottom:8px;line-height:1.5;}
+.ext-card-actions{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.ext-grid{display:flex;flex-direction:column;gap:10px;}
+.ai-chat-wrap{display:flex;flex-direction:column;height:480px;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.ai-chat-header{padding:12px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--mist);}
+.ai-chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.ai-msg{max-width:80%;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+.ai-msg-user{background:var(--ink);color:white;align-self:flex-end;border-radius:8px 8px 2px 8px;}
+.ai-msg-assistant{background:var(--mist);color:var(--ink);align-self:flex-start;border-radius:8px 8px 8px 2px;}
+.ai-msg pre{background:#0a0a0a;color:#e8e8e8;border-radius:4px;padding:12px;font-family:var(--font-b);font-size:12px;margin:8px 0;overflow-x:auto;white-space:pre;}
+.ai-msg .use-code-btn{font-size:11px;background:var(--ember);color:white;border:none;border-radius:3px;padding:4px 10px;cursor:pointer;margin-top:4px;}
+.ai-chat-footer{padding:12px;border-top:1.5px solid var(--border);display:flex;gap:8px;}
+.ai-chat-footer textarea{flex:1;font-family:var(--font-b);font-size:13px;padding:8px 12px;border:1.5px solid var(--border);border-radius:4px;resize:none;height:40px;outline:none;}
+.ai-chat-footer textarea:focus{border-color:var(--ink);}
+.ext-code-editor{width:100%;font-family:var(--font-b);font-size:12px;padding:12px;border:1.5px solid var(--border);border-radius:4px;background:#0a0a0a;color:#e8e8e8;height:380px;resize:vertical;outline:none;line-height:1.6;}
+.ext-code-editor:focus{border-color:var(--stone);}
+.syntax-result{font-size:12px;padding:6px 10px;border-radius:3px;margin-top:6px;display:none;}
+.syntax-ok{background:#d4edda;color:#155724;display:block;}
+.syntax-err{background:#f8d7da;color:#721c24;display:block;}
+
+    /* ===== FLOW BUILDER ===== */
+    .page-flow-fullbleed { display:flex; flex-direction:column; height:calc(100vh - 52px); padding:0; max-width:none; }
+    .flow-topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:1px solid var(--border); background:#fff; gap:10px; flex-shrink:0; flex-wrap:wrap; }
+    .flow-topbar-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .flow-topbar-right { display:flex; align-items:center; gap:8px; }
+    .flow-back-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-family:var(--font-b); font-size:12px; cursor:pointer; color:var(--stone); }
+    .flow-back-btn:hover { border-color:var(--ink); color:var(--ink); }
+    .flow-title-label { font-family:var(--font-b); font-size:13px; font-weight:700; color:var(--ink); padding:0 10px; border-left:1px solid var(--border); letter-spacing:1px; }
+    .flow-preset-label { font-size:10px; color:var(--stone); letter-spacing:2px; text-transform:uppercase; }
+    .flow-preset-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:var(--font-b); font-size:11px; cursor:pointer; color:var(--ink); white-space:nowrap; }
+    .flow-preset-btn:hover { border-color:var(--ember); color:var(--ember); }
+    .flow-preset-btn.active { border-color:var(--ember); background:var(--ember); color:#fff; }
+    .flow-add-menu { position:relative; }
+    .flow-add-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-family:var(--font-b); font-size:12px; cursor:pointer; color:var(--ink); }
+    .flow-add-btn:hover { border-color:var(--ember); color:var(--ember); }
+    .flow-add-dd { position:absolute; top:110%; right:0; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.12); min-width:160px; z-index:1000; display:none; overflow:hidden; }
+    .flow-add-dd.open { display:block; }
+    .flow-add-dd button { display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--border); padding:9px 14px; font-family:var(--font-b); font-size:12px; cursor:pointer; color:var(--ink); }
+    .flow-add-dd button:last-child { border-bottom:none; }
+    .flow-add-dd button:hover { background:var(--mist); }
+    .flow-clear-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:5px 12px; font-family:var(--font-b); font-size:12px; cursor:pointer; color:var(--stone); }
+    .flow-clear-btn:hover { border-color:var(--ember); color:var(--ember); }
+    .flow-launch-btn { background:var(--ember); color:#fff; border:none; border-radius:6px; padding:6px 16px; font-family:var(--font-b); font-size:13px; font-weight:700; cursor:pointer; letter-spacing:0.5px; }
+    .flow-launch-btn:hover { background:#c73d22; }
+    .flow-body { display:flex; flex:1; overflow:hidden; }
+    #drawflow { flex:1; position:relative; overflow:hidden; }
+    /* Drawflow canvas dot grid */
+    #drawflow > .parent-drawflow { background:var(--mist) !important; background-image:radial-gradient(circle, #c8c8c8 1px, transparent 1px) !important; background-size:24px 24px !important; }
+    /* Drawflow node overrides */
+    .drawflow .drawflow-node { background:#fff; border:1.5px solid var(--border); border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.07); padding:0; font-family:var(--font-b); min-width:220px; }
+    .drawflow .drawflow-node.selected { border-color:var(--ember); box-shadow:0 0 0 3px rgba(232,77,47,0.15); }
+    .drawflow .drawflow-node .drawflow_content_node { padding:0; }
+    .drawflow .drawflow-node .input, .drawflow .drawflow-node .output { background:#fff; border:2px solid #ccc; width:13px; height:13px; border-radius:50%; top:50%; }
+    .drawflow .drawflow-node .input:hover, .drawflow .drawflow-node .output:hover { background:var(--ember); border-color:var(--ember); }
+    .drawflow .connection .main-path { stroke:var(--ink); stroke-width:2px; fill:none; }
+    /* PathScore node parts */
+    .ps-node-header { background:var(--ink); color:#fff; font-family:var(--font-b); font-size:10px; letter-spacing:2.5px; text-transform:uppercase; padding:8px 12px 8px 10px; border-radius:6px 6px 0 0; display:flex; align-items:center; gap:7px; }
+    .ps-node-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .dot-model { background:#4ade80; }
+    .dot-prompt { background:#60a5fa; }
+    .dot-judge { background:#f59e0b; }
+    .dot-runner { background:var(--ember); }
+    .dot-results { background:#a855f7; }
+    .ps-node-body { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+    .ps-field-label { font-size:10px; color:var(--stone); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:2px; }
+    .ps-input { width:100%; background:var(--mist); border:1px solid var(--border); border-radius:4px; padding:6px 8px; font-family:var(--font-b); font-size:12px; color:var(--ink); box-sizing:border-box; }
+    .ps-input:focus { border-color:var(--ember); outline:none; background:#fff; }
+    .ps-select { appearance:none; -webkit-appearance:none; background:var(--mist) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E") no-repeat right 8px center; padding-right:24px; cursor:pointer; }
+    .ps-select:focus { border-color:var(--ember); outline:none; background-color:#fff; }
+    /* Prompt node rows */
+    .prompt-rows { display:flex; flex-direction:column; gap:4px; max-height:150px; overflow-y:auto; }
+    .prompt-row { display:flex; gap:4px; align-items:center; }
+    .prompt-row input { flex:1; background:var(--mist); border:1px solid var(--border); border-radius:4px; padding:5px 7px; font-family:var(--font-b); font-size:11px; color:var(--ink); }
+    .prompt-row input:focus { border-color:var(--ember); outline:none; background:#fff; }
+    .prompt-del-btn { background:none; border:none; color:var(--stone); cursor:pointer; font-size:16px; line-height:1; padding:2px 5px; flex-shrink:0; }
+    .prompt-del-btn:hover { color:var(--ember); }
+    .add-prompt-btn { background:none; border:1px dashed var(--border); border-radius:4px; color:var(--stone); font-family:var(--font-b); font-size:11px; padding:5px 8px; cursor:pointer; width:100%; text-align:center; margin-top:2px; }
+    .add-prompt-btn:hover { border-color:var(--ember); color:var(--ember); }
+    /* Results node launch btn */
+    .flow-node-launch-btn { background:var(--ember); color:#fff; border:none; border-radius:6px; font-family:var(--font-b); font-size:13px; font-weight:700; padding:10px 16px; cursor:pointer; width:100%; margin-top:4px; letter-spacing:0.5px; }
+    .flow-node-launch-btn:hover { background:#c73d22; }
+    .flow-estimate { font-size:11px; color:var(--stone); min-height:28px; line-height:1.5; }
+    /* Temp display */
+    .temp-display { font-family:var(--font-b); font-size:11px; color:var(--ember); font-weight:700; }
+    /* Chat panel */
+    .flow-chat-panel { width:300px; border-left:1px solid var(--border); display:flex; flex-direction:column; background:#fff; flex-shrink:0; }
+    .flow-chat-header { background:var(--ink); color:#fff; padding:11px 14px; font-family:var(--font-b); font-size:10px; letter-spacing:2.5px; text-transform:uppercase; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .flow-chat-indicator { width:7px; height:7px; background:#4ade80; border-radius:50%; flex-shrink:0; animation:pulse 2s infinite; }
+    .flow-chat-msgs { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+    .flow-chat-msg { max-width:95%; padding:9px 11px; border-radius:8px; font-size:12px; line-height:1.55; font-family:var(--font-b); }
+    .flow-chat-msg.user { background:var(--ink); color:#fff; align-self:flex-end; border-radius:8px 8px 2px 8px; }
+    .flow-chat-msg.assistant { background:var(--mist); color:var(--ink); align-self:flex-start; border-radius:8px 8px 8px 2px; }
+    .flow-chat-msg pre { background:#0a0a0a; color:#e8e8e8; border-radius:4px; padding:8px 10px; font-size:11px; overflow-x:auto; margin:6px 0 0; white-space:pre-wrap; word-break:break-all; }
+    .flow-chat-footer { padding:10px; border-top:1px solid var(--border); display:flex; gap:6px; flex-shrink:0; align-items:flex-end; }
+    .flow-chat-footer textarea { flex:1; resize:none; border:1px solid var(--border); border-radius:6px; padding:8px; font-family:var(--font-b); font-size:12px; height:60px; box-sizing:border-box; }
+    .flow-chat-footer textarea:focus { border-color:var(--ember); outline:none; }
+    .flow-send-btn { background:var(--ember); color:#fff; border:none; border-radius:6px; padding:0 13px; height:60px; cursor:pointer; font-size:18px; flex-shrink:0; }
+    .flow-send-btn:hover { background:#c73d22; }
 </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -294,6 +411,8 @@ table.lb tr:hover td{background:var(--mist);}
       <span class="nav-link" data-page="landing" onclick="showPage('landing')">Home</span>
       <span class="nav-link active" data-page="home" onclick="showPage('home')">Benchmarks</span>
       <span class="nav-link" data-page="about" onclick="showPage('about')">Methodology</span>
+      <span class="nav-link" data-page="extensions" onclick="showPage('extensions')">Extensions</span>
+      <span class="nav-link" data-page="flow" onclick="showPage('flow')">Flow</span>
     </div>
   </nav>
   <main class="main">
@@ -484,33 +603,7 @@ table.lb tr:hover td{background:var(--mist);}
           <!-- Step 0: Mode -->
           <div class="config-panel active" id="panel-0">
             <div style="margin-bottom:32px;"><h2>Select Mode</h2><p class="stone" style="font-size:13px;margin-top:6px;">Choose how this benchmark will operate.</p></div>
-            <div class="mode-cards">
-              <div class="mode-card selected" id="mode-standard" onclick="selectMode('standard')">
-                <div class="mode-card-icon">&#9654;</div>
-                <div class="mode-card-title">Standard</div>
-                <div class="mode-card-desc">Generate SVGs from prompts, pairwise judge with VLM. Classic ELO ranking.</div>
-              </div>
-              <div class="mode-card" id="mode-feedback_iteration" onclick="selectMode('feedback_iteration')">
-                <div class="mode-card-icon">&#8635;</div>
-                <div class="mode-card-title">Feedback Iteration</div>
-                <div class="mode-card-desc">Standard run + models improve SVGs based on judge feedback. Measures learning ability.</div>
-              </div>
-              <div class="mode-card" id="mode-image_to_svg" onclick="selectMode('image_to_svg')">
-                <div class="mode-card-icon">&#128444;</div>
-                <div class="mode-card-title">Image to SVG</div>
-                <div class="mode-card-desc">Provide a target image — models reproduce it as SVG. Tests accuracy and fidelity.</div>
-              </div>
-              <div class="mode-card" id="mode-svg_editing" onclick="selectMode('svg_editing')">
-                <div class="mode-card-icon">&#9998;</div>
-                <div class="mode-card-title">SVG Editing</div>
-                <div class="mode-card-desc">Give models an existing SVG plus an edit instruction. Tests instruction following.</div>
-              </div>
-              <div class="mode-card" id="mode-human_eval" onclick="selectMode('human_eval')">
-                <div class="mode-card-icon">&#128065;</div>
-                <div class="mode-card-title">Human Evaluation</div>
-                <div class="mode-card-desc">You judge comparisons alongside LLMs. Track human vs AI agreement.</div>
-              </div>
-            </div>
+            <div class="mode-cards" id="mode-cards-container"></div>
             <!-- Feedback iteration extra config -->
             <div id="iter-model-section" style="display:none;margin-top:24px;">
               <h3 style="margin-bottom:8px;">Iteration Models</h3>
@@ -930,7 +1023,161 @@ table.lb tr:hover td{background:var(--mist);}
 
     </div>
 
+
+    <div id="page-extensions" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <h1>Extensions</h1>
+          <p class="stone" style="margin-top:6px;font-size:14px;">Customize the pipeline with provider, judge, mode, and results hooks.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openExtModal(null)">+ New Extension</button>
+      </div>
+      <hr class="divider">
+
+      <h2 style="margin-bottom:16px;">Library</h2>
+      <div class="ext-grid" id="ext-library"></div>
+
+      <hr class="divider">
+
+      <h2 style="margin-bottom:4px;">AI Assistant</h2>
+      <p class="stone" style="font-size:12px;margin-bottom:16px;">Describe what you need — the assistant will generate the extension code for you.</p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span class="label" style="margin:0;white-space:nowrap;">Hook type:</span>
+        <select id="ai-hook-type" style="width:auto;font-size:12px;padding:6px 10px;">
+          <option value="judge">judge</option>
+          <option value="provider">provider</option>
+          <option value="mode">mode</option>
+          <option value="results">results</option>
+        </select>
+      </div>
+      <div class="ai-chat-wrap">
+        <div class="ai-chat-header">
+          <div style="width:8px;height:8px;background:var(--ember);border-radius:50%;"></div>
+          <span style="font-size:12px;font-weight:500;">PathScore Extension Builder · claude-sonnet-4-6</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearAiChat()" style="margin-left:auto;">Clear</button>
+        </div>
+        <div class="ai-chat-messages" id="ai-chat-messages">
+          <div class="ai-msg ai-msg-assistant">Hi! I can help you build PathScore extensions. Tell me what you want to create — for example: "Build a judge that scores code correctness" or "Create a provider that calls my local Ollama instance".</div>
+        </div>
+        <div class="ai-chat-footer">
+          <textarea id="ai-chat-input" placeholder="Describe what you want to build..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChat();}"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="sendAiChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+      <!-- ===== FLOW BUILDER ===== -->
+      <div id="page-flow" class="page page-flow-fullbleed">
+        <div class="flow-topbar">
+          <div class="flow-topbar-left">
+            <button class="flow-back-btn" onclick="showPage('home')">← Back</button>
+            <span class="flow-title-label">Flow Builder</span>
+            <span class="flow-preset-label">PRESETS</span>
+            <button class="flow-preset-btn" onclick="loadFlowPreset('quick_showdown')">Quick Showdown</button>
+            <button class="flow-preset-btn" onclick="loadFlowPreset('full_standard')">Full Standard</button>
+            <button class="flow-preset-btn" onclick="loadFlowPreset('feedback_loop')">Feedback Loop</button>
+            <button class="flow-preset-btn" onclick="loadFlowPreset('human_eval')">Human Eval</button>
+            <button class="flow-preset-btn" onclick="loadFlowPreset('multi_judge')">Multi-Judge</button>
+          </div>
+          <div class="flow-topbar-right">
+            <div class="flow-add-menu">
+              <button class="flow-add-btn" onclick="toggleFlowAddMenu(event)">+ Add Node ▾</button>
+              <div class="flow-add-dd" id="flow-add-dd">
+                <button onclick="addFlowNode('model',200,200);toggleFlowAddMenu()">🟢 Model</button>
+                <button onclick="addFlowNode('prompt',200,380);toggleFlowAddMenu()">🔵 Prompt Pack</button>
+                <button onclick="addFlowNode('judge',200,540);toggleFlowAddMenu()">🟡 Judge</button>
+                <button onclick="addFlowNode('runner',520,300);toggleFlowAddMenu()">🔴 Runner</button>
+                <button onclick="addFlowNode('results',820,300);toggleFlowAddMenu()">🟣 Results</button>
+              </div>
+            </div>
+            <button class="flow-clear-btn" onclick="clearFlow()">Clear</button>
+            <button class="flow-launch-btn" onclick="launchFlow()">▶ Launch</button>
+          </div>
+        </div>
+        <div class="flow-body">
+          <div id="drawflow"></div>
+          <div class="flow-chat-panel">
+            <div class="flow-chat-header">
+              <span class="flow-chat-indicator"></span>
+              AI FLOW BUILDER
+            </div>
+            <div class="flow-chat-msgs" id="flow-chat-msgs">
+              <div class="flow-chat-msg assistant">Describe a benchmark and I'll build the flow for you.<br><br>Try: <em>"Compare Claude and Gemini on 5 logo prompts"</em></div>
+            </div>
+            <div class="flow-chat-footer">
+              <textarea id="flow-chat-input" placeholder="Describe your benchmark..." rows="3" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFlowChat();}"></textarea>
+              <button class="flow-send-btn" onclick="sendFlowChat()">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
   </main>
+</div>
+
+<!-- Extension Modal -->
+<div class="modal-overlay" id="ext-modal">
+  <div class="modal" style="max-width:720px;max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeExtModal()">&#10005;</button>
+    <h2 style="margin-bottom:20px;" id="ext-modal-title">New Extension</h2>
+
+    <div class="field">
+      <label class="label">Name</label>
+      <input type="text" id="ext-name" placeholder="My Custom Judge">
+    </div>
+    <div class="field">
+      <label class="label">Description</label>
+      <input type="text" id="ext-desc" placeholder="What this extension does">
+    </div>
+    <div class="grid2" style="gap:16px;">
+      <div class="field">
+        <label class="label">Hook Type</label>
+        <select id="ext-hook-type" onchange="toggleModeFields()">
+          <option value="judge">judge</option>
+          <option value="provider">provider</option>
+          <option value="mode">mode</option>
+          <option value="results">results</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="mode-fields" style="display:none;">
+      <div class="grid2" style="gap:16px;">
+        <div class="field">
+          <label class="label">Mode ID (slug)</label>
+          <input type="text" id="ext-mode-id" placeholder="my_custom_mode">
+        </div>
+        <div class="field">
+          <label class="label">Mode Label</label>
+          <input type="text" id="ext-mode-label" placeholder="My Custom Mode">
+        </div>
+      </div>
+      <div class="grid2" style="gap:16px;">
+        <div class="field">
+          <label class="label">Icon (emoji)</label>
+          <input type="text" id="ext-mode-icon" placeholder="🔧">
+        </div>
+        <div class="field">
+          <label class="label">Short Description</label>
+          <input type="text" id="ext-mode-desc" placeholder="One-line description for mode card">
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>fn_body (JavaScript)</span>
+        <button class="btn btn-ghost btn-sm" onclick="testSyntax()" style="font-size:11px;padding:3px 10px;">Test Syntax</button>
+      </label>
+      <textarea class="ext-code-editor" id="ext-fn-body" placeholder="return async function(genA, genB, prompt, config, helpers) {&#10;  // your code here&#10;  return { winner: 'A', model_a_score: 8, model_b_score: 6, thought_process: '', feedback: '' };&#10;};"></textarea>
+      <div id="syntax-result" class="syntax-result"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-outline" onclick="closeExtModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExt()">Save Extension</button>
+    </div>
+  </div>
 </div>
 
 <!-- SVG Modal -->
@@ -994,6 +1241,9 @@ function showPage(name) {
   if (name==='landing') loadLanding();
   if (name==='home') loadRuns();
   if (name==='human-judge') loadHumanJudge();
+  if (name==='extensions') loadExtensions();
+  if (name==='configure') renderModeCards();
+  if (name==='flow') initFlowEditor();
 }
 
 async function loadLanding() {
@@ -1827,7 +2077,44 @@ function exportHTML() {
   const hmRows=models.map(rm=>'<tr><th>'+sm(rm)+'</th>'+models.map(cm=>{if(rm===cm) return '<td style="background:#f5f5f5;">N/A</td>';const v=hm[rm]?.[cm];if(v==null) return '<td>--</td>';const bg=v>.5?'rgba(232,77,47,'+v+')':'rgba(76,175,74,'+(1-v)+')';return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';}).join('')+'</tr>').join('');
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results - '+resultsData.run.name+'</title>'+
     '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'+
-    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Outfit",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}</style></head>'+
+    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Outfit",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}
+/* ── Extension System ─────────────────────────────────────────── */
+.ext-hook-badge{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px;}
+.badge-provider{background:#d4edda;color:#155724;}
+.badge-judge{background:#cce5ff;color:#004085;}
+.badge-mode{background:#fff3cd;color:#856404;}
+.badge-results{background:#f8d7da;color:#721c24;}
+.toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;}
+.toggle-switch input:checked + .toggle-slider{background:var(--ember);}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(16px);}
+.ext-card{border:1.5px solid var(--border);border-radius:6px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;transition:border-color .15s;}
+.ext-card:hover{border-color:var(--stone);}
+.ext-card-body{flex:1;min-width:0;}
+.ext-card-name{font-family:var(--font-h);font-weight:600;font-size:14px;margin-bottom:4px;}
+.ext-card-desc{font-size:12px;color:var(--stone);margin-bottom:8px;line-height:1.5;}
+.ext-card-actions{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.ext-grid{display:flex;flex-direction:column;gap:10px;}
+.ai-chat-wrap{display:flex;flex-direction:column;height:480px;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.ai-chat-header{padding:12px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--mist);}
+.ai-chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.ai-msg{max-width:80%;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+.ai-msg-user{background:var(--ink);color:white;align-self:flex-end;border-radius:8px 8px 2px 8px;}
+.ai-msg-assistant{background:var(--mist);color:var(--ink);align-self:flex-start;border-radius:8px 8px 8px 2px;}
+.ai-msg pre{background:#0a0a0a;color:#e8e8e8;border-radius:4px;padding:12px;font-family:var(--font-b);font-size:12px;margin:8px 0;overflow-x:auto;white-space:pre;}
+.ai-msg .use-code-btn{font-size:11px;background:var(--ember);color:white;border:none;border-radius:3px;padding:4px 10px;cursor:pointer;margin-top:4px;}
+.ai-chat-footer{padding:12px;border-top:1.5px solid var(--border);display:flex;gap:8px;}
+.ai-chat-footer textarea{flex:1;font-family:var(--font-b);font-size:13px;padding:8px 12px;border:1.5px solid var(--border);border-radius:4px;resize:none;height:40px;outline:none;}
+.ai-chat-footer textarea:focus{border-color:var(--ink);}
+.ext-code-editor{width:100%;font-family:var(--font-b);font-size:12px;padding:12px;border:1.5px solid var(--border);border-radius:4px;background:#0a0a0a;color:#e8e8e8;height:380px;resize:vertical;outline:none;line-height:1.6;}
+.ext-code-editor:focus{border-color:var(--stone);}
+.syntax-result{font-size:12px;padding:6px 10px;border-radius:3px;margin-top:6px;display:none;}
+.syntax-ok{background:#d4edda;color:#155724;display:block;}
+.syntax-err{background:#f8d7da;color:#721c24;display:block;}
+
+</style></head>'+
     '<body><h1>'+resultsData.run.name+'</h1><p style="color:#999;margin-bottom:48px">'+models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+new Date(resultsData.run.created_at).toLocaleDateString()+'</p>'+
     '<h2>ELO Leaderboard</h2><table><thead><tr><th>#</th><th>Model</th><th>ELO</th><th>Win Rate</th><th>W/L/T</th><th>Avg Score</th></tr></thead><tbody>'+lb+'</tbody></table>'+
     '<h2>Win Rate Heatmap</h2><table style="width:auto"><thead><tr><th></th>'+hmCols+'</tr></thead><tbody>'+hmRows+'</tbody></table>'+
@@ -1860,6 +2147,743 @@ function switchTab(name, el) {
 
 // Init
 loadLanding();
+
+// ── Extension System JS ──────────────────────────────────────────────────────
+
+let extEditingId = null;
+let aiConversation = [];
+
+function hookBadge(type) {
+  const colors = { provider:'badge-provider', judge:'badge-judge', mode:'badge-mode', results:'badge-results' };
+  return `<span class="ext-hook-badge ${colors[type]||''}">${type}</span>`;
+}
+
+async function loadExtensions() {
+  try {
+    const exts = await fetch('/api/extensions').then(r => r.json());
+    const grid = document.getElementById('ext-library');
+    if (!exts.length) { grid.innerHTML = '<div class="stone" style="font-size:13px;">No extensions yet.</div>'; return; }
+    grid.innerHTML = exts.map(e => `
+      <div class="ext-card" id="extcard-${e.id}">
+        <label class="toggle-switch" title="${e.enabled ? 'Enabled' : 'Disabled'}">
+          <input type="checkbox" ${e.enabled ? 'checked' : ''} onchange="toggleExt('${e.id}', this)">
+          <span class="toggle-slider"></span>
+        </label>
+        <div class="ext-card-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span class="ext-card-name">${e.name}</span>
+            ${hookBadge(e.hook_type)}
+            ${e.is_builtin ? '<span style="font-size:10px;color:var(--stone);">built-in</span>' : ''}
+          </div>
+          <div class="ext-card-desc">${e.description}</div>
+          ${e.mode_id ? `<div style="font-size:11px;color:var(--stone);">mode_id: ${e.mode_id}</div>` : ''}
+          <div class="ext-card-actions">
+            <button class="btn btn-outline btn-sm" onclick="openExtModal('${e.id}')">Edit</button>
+            ${!e.is_builtin ? `<button class="btn btn-ghost btn-sm" onclick="deleteExt('${e.id}')" style="color:var(--ember);">Delete</button>` : ''}
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function toggleExt(id, checkbox) {
+  try {
+    const r = await fetch('/api/extensions/' + id + '/toggle', { method: 'POST' }).then(r => r.json());
+    checkbox.checked = !!r.enabled;
+    renderModeCards();
+  } catch(e) { checkbox.checked = !checkbox.checked; }
+}
+
+async function deleteExt(id) {
+  if (!confirm('Delete this extension?')) return;
+  await fetch('/api/extensions/' + id, { method: 'DELETE' });
+  loadExtensions();
+  renderModeCards();
+}
+
+function openExtModal(id) {
+  extEditingId = id;
+  const modal = document.getElementById('ext-modal');
+  document.getElementById('ext-modal-title').textContent = id ? 'Edit Extension' : 'New Extension';
+  document.getElementById('ext-name').value = '';
+  document.getElementById('ext-desc').value = '';
+  document.getElementById('ext-hook-type').value = 'judge';
+  document.getElementById('ext-mode-id').value = '';
+  document.getElementById('ext-mode-label').value = '';
+  document.getElementById('ext-mode-icon').value = '';
+  document.getElementById('ext-mode-desc').value = '';
+  document.getElementById('ext-fn-body').value = '';
+  document.getElementById('syntax-result').className = 'syntax-result';
+  document.getElementById('syntax-result').textContent = '';
+  toggleModeFields();
+
+  if (id) {
+    fetch('/api/extensions/' + id).then(r => r.json()).then(e => {
+      document.getElementById('ext-name').value = e.name || '';
+      document.getElementById('ext-desc').value = e.description || '';
+      document.getElementById('ext-hook-type').value = e.hook_type || 'judge';
+      document.getElementById('ext-mode-id').value = e.mode_id || '';
+      document.getElementById('ext-mode-label').value = e.mode_label || '';
+      document.getElementById('ext-mode-icon').value = e.mode_icon || '';
+      document.getElementById('ext-mode-desc').value = e.mode_desc || '';
+      document.getElementById('ext-fn-body').value = e.fn_body || '';
+      toggleModeFields();
+    });
+  }
+  modal.classList.add('open');
+}
+
+function closeExtModal() {
+  document.getElementById('ext-modal').classList.remove('open');
+}
+
+function toggleModeFields() {
+  const isMode = document.getElementById('ext-hook-type').value === 'mode';
+  document.getElementById('mode-fields').style.display = isMode ? 'block' : 'none';
+}
+
+function testSyntax() {
+  const body = document.getElementById('ext-fn-body').value;
+  const el = document.getElementById('syntax-result');
+  try {
+    new Function('helpers', body);
+    el.textContent = '✓ Syntax OK';
+    el.className = 'syntax-result syntax-ok';
+  } catch(e) {
+    el.textContent = '✗ ' + e.message;
+    el.className = 'syntax-result syntax-err';
+  }
+}
+
+async function saveExt() {
+  const body = {
+    name: document.getElementById('ext-name').value.trim(),
+    description: document.getElementById('ext-desc').value.trim(),
+    hook_type: document.getElementById('ext-hook-type').value,
+    mode_id: document.getElementById('ext-mode-id').value.trim() || null,
+    mode_label: document.getElementById('ext-mode-label').value.trim() || null,
+    mode_icon: document.getElementById('ext-mode-icon').value.trim() || null,
+    mode_desc: document.getElementById('ext-mode-desc').value.trim() || null,
+    fn_body: document.getElementById('ext-fn-body').value,
+  };
+  if (!body.name || !body.fn_body) { alert('Name and fn_body required'); return; }
+
+  const url = extEditingId ? '/api/extensions/' + extEditingId : '/api/extensions';
+  const method = extEditingId ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeExtModal();
+  loadExtensions();
+  renderModeCards();
+}
+
+// AI assistant chat
+async function sendAiChat() {
+  const input = document.getElementById('ai-chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  const hookType = document.getElementById('ai-hook-type').value;
+  const msgs = document.getElementById('ai-chat-messages');
+
+  // Add user message
+  const userEl = document.createElement('div');
+  userEl.className = 'ai-msg ai-msg-user';
+  userEl.textContent = msg;
+  msgs.appendChild(userEl);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Add thinking indicator
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'ai-msg ai-msg-assistant';
+  thinkEl.textContent = '…';
+  msgs.appendChild(thinkEl);
+
+  try {
+    const r = await fetch('/api/extensions/ai-assist', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, hook_type: hookType, conversation: aiConversation }),
+    }).then(r => r.json());
+
+    aiConversation.push({ role: 'user', content: msg });
+    aiConversation.push({ role: 'assistant', content: r.reply });
+
+    // Render reply with code highlighting
+    thinkEl.innerHTML = renderAiReply(r.reply, hookType);
+  } catch(e) {
+    thinkEl.textContent = 'Error: ' + e.message;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderAiReply(text, hookType) {
+  // Split on code blocks
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  let html = '';
+  let hasCode = false;
+  let lastCode = '';
+  for (const part of parts) {
+    if (part.startsWith('```')) {
+      const code = part.replace(/^```\w*
+?/, '').replace(/```$/, '');
+      hasCode = true;
+      lastCode = code;
+      html += `<pre>${escHtml(code)}</pre>`;
+    } else {
+      html += escHtml(part);
+    }
+  }
+  if (hasCode) {
+    html += `<br><button class="use-code-btn" onclick="useAiCode(this)" data-code="${encodeURIComponent(lastCode)}" data-hook="${hookType}">Use this code</button>`;
+  }
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function useAiCode(btn) {
+  const code = decodeURIComponent(btn.dataset.code);
+  const hookType = btn.dataset.hook;
+  openExtModal(null);
+  document.getElementById('ext-hook-type').value = hookType;
+  document.getElementById('ext-fn-body').value = code;
+  toggleModeFields();
+}
+
+function clearAiChat() {
+  aiConversation = [];
+  document.getElementById('ai-chat-messages').innerHTML = '<div class="ai-msg ai-msg-assistant">Chat cleared. How can I help you build an extension?</div>';
+}
+
+// Dynamic mode cards
+const BUILTIN_MODES = [
+  { id: 'standard', icon: '▶', label: 'Standard', desc: 'Generate SVGs from prompts, pairwise judge with VLM. Classic ELO ranking.' },
+  { id: 'feedback_iteration', icon: '↻', label: 'Feedback Iteration', desc: 'Standard run + models improve SVGs based on judge feedback. Measures learning ability.' },
+  { id: 'image_to_svg', icon: '🖼', label: 'Image to SVG', desc: 'Provide a target image — models reproduce it as SVG. Tests accuracy and fidelity.' },
+  { id: 'svg_editing', icon: '✎', label: 'SVG Editing', desc: 'Give models an existing SVG plus an edit instruction. Tests instruction following.' },
+  { id: 'human_eval', icon: '👁', label: 'Human Evaluation', desc: 'You judge comparisons alongside LLMs. Track human vs AI agreement.' },
+];
+
+async function renderModeCards() {
+  const container = document.getElementById('mode-cards-container');
+  if (!container) return;
+
+  let extModes = [];
+  try { extModes = await fetch('/api/extensions/modes').then(r => r.json()); } catch(e) {}
+  const enabledExtModes = extModes.filter(e => e.enabled);
+
+  const all = [
+    ...BUILTIN_MODES,
+    ...enabledExtModes.map(e => ({ id: e.mode_id, icon: e.mode_icon || '🔧', label: e.mode_label || e.name, desc: e.mode_desc || e.description, isExt: true }))
+  ];
+
+  container.innerHTML = all.map(m => `
+    <div class="mode-card ${cfg.mode===m.id ? 'selected' : ''}" id="mode-${m.id}" onclick="selectMode('${m.id}')">
+      <div class="mode-card-icon">${m.icon}</div>
+      <div class="mode-card-title">${m.label}${m.isExt ? ' <span style=\"font-size:10px;color:var(--stone);\">ext</span>' : ''}</div>
+      <div class="mode-card-desc">${m.desc}</div>
+    </div>`).join('');
+}
+
+  // ===== FLOW BUILDER =====
+  let flowEditor = null;
+  let flowEditorReady = false;
+  let flowChatHistory = [];
+  let activePreset = null;
+
+  // ---- Node HTML Templates ----
+  const FLOW_MODEL_TPL = `
+    <div class="ps-node-header"><span class="ps-node-dot dot-model"></span>MODEL</div>
+    <div class="ps-node-body">
+      <div><div class="ps-field-label">Model ID</div>
+        <input type="text" class="ps-input" df-model-id placeholder="provider/model-name"></div>
+      <div><div class="ps-field-label">Reasoning Effort</div>
+        <select class="ps-input ps-select" df-reasoning>
+          <option value="">none</option>
+          <option value="low">low</option>
+          <option value="high">high</option>
+        </select></div>
+    </div>`;
+
+  const FLOW_PROMPT_TPL = `
+    <div class="ps-node-header"><span class="ps-node-dot dot-prompt"></span>PROMPT PACK</div>
+    <div class="ps-node-body">
+      <div class="ps-field-label">Prompts</div>
+      <div class="prompt-rows" id="flow-pr-NODEID"></div>
+      <button class="add-prompt-btn" onclick="flowAddPromptRow(this)">+ Add prompt</button>
+      <input type="hidden" df-prompts value="[]">
+    </div>`;
+
+  const FLOW_JUDGE_TPL = `
+    <div class="ps-node-header"><span class="ps-node-dot dot-judge"></span>JUDGE</div>
+    <div class="ps-node-body">
+      <div><div class="ps-field-label">Judge Model</div>
+        <input type="text" class="ps-input" df-judge-model placeholder="google/gemini-3-flash-preview"></div>
+      <div><div class="ps-field-label">Runs per pair (1–5)</div>
+        <input type="number" class="ps-input" df-judge-runs min="1" max="5" value="2"></div>
+    </div>`;
+
+  const FLOW_RUNNER_TPL = `
+    <div class="ps-node-header"><span class="ps-node-dot dot-runner"></span>RUNNER</div>
+    <div class="ps-node-body">
+      <div><div class="ps-field-label">Benchmark Name</div>
+        <input type="text" class="ps-input" df-bench-name placeholder="My Benchmark"></div>
+      <div><div class="ps-field-label">Mode</div>
+        <select class="ps-input ps-select" df-mode>
+          <option value="standard">Standard</option>
+          <option value="feedback_iteration">Feedback Loop</option>
+          <option value="human_eval">Human Eval</option>
+          <option value="image_to_svg">Image to SVG</option>
+        </select></div>
+      <div><div class="ps-field-label">Temperature <span class="temp-display" id="flow-temp-val">0.7</span></div>
+        <input type="range" class="ps-input" df-temp min="0" max="1" step="0.1" value="0.7"
+          oninput="document.getElementById('flow-temp-val').textContent=this.value"></div>
+    </div>`;
+
+  const FLOW_RESULTS_TPL = `
+    <div class="ps-node-header"><span class="ps-node-dot dot-results"></span>RESULTS</div>
+    <div class="ps-node-body">
+      <div class="flow-estimate" id="flow-estimate">Connect nodes and click Launch to start.</div>
+      <button class="flow-node-launch-btn" onclick="launchFlow()">▶ Launch Benchmark</button>
+    </div>`;
+
+  // ---- Init ----
+  function initFlowEditor() {
+    if (flowEditorReady) return;
+    const el = document.getElementById('drawflow');
+    flowEditor = new Drawflow(el);
+    flowEditor.reroute = true;
+    flowEditor.reroute_fix_curvature = true;
+    flowEditor.zoom_max = 2.5;
+    flowEditor.zoom_min = 0.2;
+    flowEditor.start();
+    flowEditorReady = true;
+    // Close add menu on canvas click
+    el.addEventListener('click', function(e) {
+      if (!e.target.closest('.flow-add-menu')) {
+        document.getElementById('flow-add-dd').classList.remove('open');
+      }
+    });
+    loadFlowPreset('quick_showdown');
+  }
+
+  function toggleFlowAddMenu(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('flow-add-dd').classList.toggle('open');
+  }
+
+  // ---- Add Node ----
+  function addFlowNode(type, x, y, data) {
+    data = data || {};
+    const cfgs = {
+      model:   { inputs:0, outputs:1, cls:'ps-node-model',   tpl: FLOW_MODEL_TPL },
+      prompt:  { inputs:0, outputs:1, cls:'ps-node-prompt',  tpl: FLOW_PROMPT_TPL },
+      judge:   { inputs:0, outputs:1, cls:'ps-node-judge',   tpl: FLOW_JUDGE_TPL },
+      runner:  { inputs:3, outputs:1, cls:'ps-node-runner',  tpl: FLOW_RUNNER_TPL },
+      results: { inputs:1, outputs:0, cls:'ps-node-results', tpl: FLOW_RESULTS_TPL },
+    };
+    const c = cfgs[type];
+    if (!c) return null;
+    const id = flowEditor.addNode(type, c.inputs, c.outputs, x, y, c.cls, data, c.tpl);
+    // After DOM insertion, populate prompt rows if any
+    if (type === 'prompt' && data.prompts) {
+      let prompts;
+      try { prompts = typeof data.prompts === 'string' ? JSON.parse(data.prompts) : data.prompts; } catch(e) { prompts = []; }
+      setTimeout(() => {
+        const rowsEl = document.getElementById('flow-pr-' + id) ||
+          document.querySelector('.drawflow-node[id="node-' + id + '"] .prompt-rows');
+        if (rowsEl) { rowsEl.innerHTML = ''; prompts.forEach(t => flowAddPromptRowText(rowsEl, t)); }
+        flowSyncPrompts(id);
+      }, 50);
+    }
+    return id;
+  }
+
+  // ---- Prompt row management ----
+  function flowAddPromptRow(btn) {
+    const rows = btn.previousElementSibling;
+    if (rows && rows.classList.contains('prompt-rows')) {
+      flowAddPromptRowText(rows, '');
+      // Find node id and sync
+      const nodeEl = btn.closest('.drawflow-node');
+      if (nodeEl) { const nid = parseInt(nodeEl.id.replace('node-','')); flowSyncPrompts(nid); }
+    }
+  }
+  function flowAddPromptRowText(rowsEl, text) {
+    const row = document.createElement('div');
+    row.className = 'prompt-row';
+    const inp = document.createElement('input');
+    inp.placeholder = 'prompt text...';
+    inp.value = text;
+    inp.addEventListener('input', function() {
+      const nodeEl = rowsEl.closest('.drawflow-node');
+      if (nodeEl) { const nid = parseInt(nodeEl.id.replace('node-','')); flowSyncPrompts(nid); }
+    });
+    const del = document.createElement('button');
+    del.className = 'prompt-del-btn';
+    del.textContent = '×';
+    del.onclick = function() {
+      row.remove();
+      const nodeEl = rowsEl.closest('.drawflow-node');
+      if (nodeEl) { const nid = parseInt(nodeEl.id.replace('node-','')); flowSyncPrompts(nid); }
+    };
+    row.appendChild(inp);
+    row.appendChild(del);
+    rowsEl.appendChild(row);
+  }
+  function flowSyncPrompts(nodeId) {
+    const nodeEl = document.getElementById('node-' + nodeId);
+    if (!nodeEl) return;
+    const rows = nodeEl.querySelectorAll('.prompt-row input');
+    const texts = Array.from(rows).map(i => i.value.trim()).filter(Boolean);
+    const hidden = nodeEl.querySelector('input[df-prompts]');
+    if (hidden) hidden.value = JSON.stringify(texts);
+    if (flowEditor && flowEditor.drawflow.drawflow.Home.data[nodeId]) {
+      flowEditor.drawflow.drawflow.Home.data[nodeId].data.prompts = JSON.stringify(texts);
+    }
+  }
+
+  // ---- Clear ----
+  function clearFlow() {
+    if (flowEditor) { flowEditor.clear(); activePreset = null; }
+    document.querySelectorAll('.flow-preset-btn').forEach(b => b.classList.remove('active'));
+  }
+
+  // ---- Presets ----
+  const FLOW_PRESETS = {
+    quick_showdown: {
+      nodes: [
+        { key:'m1', type:'model',  x:60,  y:60,  data:{'model-id':'anthropic/claude-sonnet-4-5', reasoning:'high'} },
+        { key:'m2', type:'model',  x:60,  y:200, data:{'model-id':'google/gemini-flash-1.5', reasoning:''} },
+        { key:'p1', type:'prompt', x:60,  y:360, data:{prompts:JSON.stringify(['a minimalist logo for a tech startup','a pelican riding a bicycle','an abstract data visualization'])} },
+        { key:'j1', type:'judge',  x:60,  y:560, data:{'judge-model':'google/gemini-3-flash-preview','judge-runs':'1'} },
+        { key:'r1', type:'runner', x:440, y:280, data:{'bench-name':'Quick Showdown', mode:'standard', temp:'0.7'} },
+        { key:'re', type:'results',x:780, y:280, data:{} },
+      ],
+      connections: [
+        ['m1','1','r1','1'],['m2','1','r1','1'],['p1','1','r1','2'],['j1','1','r1','3'],['r1','1','re','1']
+      ]
+    },
+    full_standard: {
+      nodes: [
+        { key:'m1', type:'model', x:60, y:40,  data:{'model-id':'minimax/minimax-m2.5', reasoning:'high'} },
+        { key:'m2', type:'model', x:60, y:130, data:{'model-id':'z-ai/glm-5', reasoning:'high'} },
+        { key:'m3', type:'model', x:60, y:220, data:{'model-id':'moonshotai/kimi-k2.5', reasoning:'high'} },
+        { key:'m4', type:'model', x:60, y:310, data:{'model-id':'qwen/qwen3.5-27b', reasoning:'high'} },
+        { key:'m5', type:'model', x:60, y:400, data:{'model-id':'qwen/qwen3.5-122b-a10b', reasoning:'high'} },
+        { key:'m6', type:'model', x:60, y:490, data:{'model-id':'qwen/qwen3.5-35b-a3b', reasoning:'high'} },
+        { key:'m7', type:'model', x:60, y:580, data:{'model-id':'stepfun/step-3.5-flash', reasoning:'high'} },
+        { key:'m8', type:'model', x:60, y:670, data:{'model-id':'liquid/lfm-2-24b-a2b', reasoning:'high'} },
+        { key:'p1', type:'prompt', x:310, y:40, data:{prompts:JSON.stringify([
+            'a pelican riding a bicycle',
+            'An aesthetic data visualization line graph with gold on charcoal',
+            'A modern S logo mark with purple and cyan gradient',
+            'A glassmorphism weather cloud icon with sapphire raindrops',
+            'Isometric infinite staircase in cyberpunk colors',
+            'An aesthetic donut chart for lifestyle balance',
+            'A vintage hot air balloon illustration in retro sunset colors',
+            'VISTA typography logo in navy and silver'
+          ])} },
+        { key:'j1', type:'judge', x:310, y:500, data:{'judge-model':'google/gemini-3-flash-preview','judge-runs':'2'} },
+        { key:'r1', type:'runner', x:580, y:300, data:{'bench-name':'Full Standard Run', mode:'standard', temp:'0.7'} },
+        { key:'re', type:'results', x:860, y:300, data:{} },
+      ],
+      connections: [
+        ['m1','1','r1','1'],['m2','1','r1','1'],['m3','1','r1','1'],['m4','1','r1','1'],
+        ['m5','1','r1','1'],['m6','1','r1','1'],['m7','1','r1','1'],['m8','1','r1','1'],
+        ['p1','1','r1','2'],['j1','1','r1','3'],['r1','1','re','1']
+      ]
+    },
+    feedback_loop: {
+      nodes: [
+        { key:'m1', type:'model',  x:60, y:80,  data:{'model-id':'anthropic/claude-sonnet-4-5', reasoning:'high'} },
+        { key:'m2', type:'model',  x:60, y:220, data:{'model-id':'google/gemini-flash-1.5', reasoning:''} },
+        { key:'m3', type:'model',  x:60, y:360, data:{'model-id':'openai/gpt-4o-mini', reasoning:''} },
+        { key:'p1', type:'prompt', x:60, y:510, data:{prompts:JSON.stringify(['a clean minimalist icon for a calendar app','a logo for a coffee brand called Morning Ritual','a flat illustration of a city skyline at sunset','a geometric pattern using triangles and hexagons','an infographic showing steps in a process'])} },
+        { key:'j1', type:'judge',  x:60, y:710, data:{'judge-model':'google/gemini-3-flash-preview','judge-runs':'2'} },
+        { key:'r1', type:'runner', x:440, y:340, data:{'bench-name':'Feedback Loop', mode:'feedback_iteration', temp:'0.7'} },
+        { key:'re', type:'results',x:790, y:340, data:{} },
+      ],
+      connections: [
+        ['m1','1','r1','1'],['m2','1','r1','1'],['m3','1','r1','1'],
+        ['p1','1','r1','2'],['j1','1','r1','3'],['r1','1','re','1']
+      ]
+    },
+    human_eval: {
+      nodes: [
+        { key:'m1', type:'model',  x:60, y:80,  data:{'model-id':'anthropic/claude-opus-4-6', reasoning:'high'} },
+        { key:'m2', type:'model',  x:60, y:220, data:{'model-id':'google/gemini-flash-1.5', reasoning:''} },
+        { key:'m3', type:'model',  x:60, y:360, data:{'model-id':'openai/gpt-4o', reasoning:''} },
+        { key:'m4', type:'model',  x:60, y:500, data:{'model-id':'meta-llama/llama-3.3-70b-instruct', reasoning:''} },
+        { key:'p1', type:'prompt', x:60, y:660, data:{prompts:JSON.stringify(['a detailed illustration of a fantasy map','a stylized portrait of a robot in watercolor style','an art nouveau poster design','a technical diagram showing API flow','a retro 80s synthwave landscape'])} },
+        { key:'j1', type:'judge',  x:60, y:860, data:{'judge-model':'google/gemini-3-flash-preview','judge-runs':'1'} },
+        { key:'r1', type:'runner', x:440, y:420, data:{'bench-name':'Human Evaluation', mode:'human_eval', temp:'0.8'} },
+        { key:'re', type:'results',x:800, y:420, data:{} },
+      ],
+      connections: [
+        ['m1','1','r1','1'],['m2','1','r1','1'],['m3','1','r1','1'],['m4','1','r1','1'],
+        ['p1','1','r1','2'],['j1','1','r1','3'],['r1','1','re','1']
+      ]
+    },
+    multi_judge: {
+      nodes: [
+        { key:'m1', type:'model',  x:60, y:80,  data:{'model-id':'anthropic/claude-sonnet-4-5', reasoning:'high'} },
+        { key:'m2', type:'model',  x:60, y:220, data:{'model-id':'google/gemini-flash-1.5', reasoning:''} },
+        { key:'m3', type:'model',  x:60, y:360, data:{'model-id':'openai/gpt-4o-mini', reasoning:''} },
+        { key:'p1', type:'prompt', x:60, y:510, data:{prompts:JSON.stringify(['a logo for a fintech startup','an abstract sculpture in isometric view','a minimal icon set for a weather app'])} },
+        { key:'j1', type:'judge',  x:60, y:670, data:{'judge-model':'google/gemini-3-flash-preview','judge-runs':'3'} },
+        { key:'r1', type:'runner', x:430, y:310, data:{'bench-name':'Multi-Judge Consensus', mode:'standard', temp:'0.7'} },
+        { key:'re', type:'results',x:780, y:310, data:{} },
+      ],
+      connections: [
+        ['m1','1','r1','1'],['m2','1','r1','1'],['m3','1','r1','1'],
+        ['p1','1','r1','2'],['j1','1','r1','3'],['r1','1','re','1']
+      ]
+    }
+  };
+
+  function loadFlowPreset(name) {
+    if (!flowEditor) return;
+    flowEditor.clear();
+    activePreset = name;
+    document.querySelectorAll('.flow-preset-btn').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector('.flow-preset-btn[onclick*="' + name + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const preset = FLOW_PRESETS[name];
+    if (!preset) return;
+    const ids = {};
+    preset.nodes.forEach(function(n) {
+      ids[n.key] = addFlowNode(n.type, n.x, n.y, n.data);
+    });
+    // Connections after nodes rendered
+    setTimeout(function() {
+      preset.connections.forEach(function(conn) {
+        const fromId = ids[conn[0]], fromOut = parseInt(conn[1]);
+        const toId = ids[conn[2]], toIn = parseInt(conn[3]);
+        try { flowEditor.addConnection(fromId, toId, 'output_' + fromOut, 'input_' + toIn); } catch(e) {}
+      });
+    }, 100);
+  }
+
+  // ---- Extract config from flow ----
+  function flowUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16);
+    });
+  }
+
+  function flowToConfig() {
+    const exported = flowEditor.export();
+    const nodes = Object.values(exported.drawflow.Home.data);
+
+    const modelNodes = nodes.filter(n => n.name === 'model');
+    const models = modelNodes.map(function(n) {
+      const d = n.data;
+      const m = {id: d['model-id']};
+      if (d.reasoning) m.reasoning_effort = d.reasoning;
+      return m;
+    }).filter(m => m.id && m.id.trim());
+
+    const promptNode = nodes.find(n => n.name === 'prompt');
+    let prompts = [];
+    if (promptNode) {
+      try {
+        const raw = promptNode.data.prompts;
+        const arr = typeof raw === 'string' ? JSON.parse(raw) : (raw || []);
+        prompts = arr.filter(Boolean).map(t => ({id: flowUUID(), text: t}));
+      } catch(e) { prompts = []; }
+    }
+
+    const judgeNode = nodes.find(n => n.name === 'judge');
+    const runnerNode = nodes.find(n => n.name === 'runner');
+
+    return {
+      name: (runnerNode && runnerNode.data['bench-name']) || 'Flow Benchmark',
+      mode: (runnerNode && runnerNode.data.mode) || 'standard',
+      models: models,
+      prompts: prompts,
+      judge: {
+        model: (judgeNode && judgeNode.data['judge-model']) || 'google/gemini-3-flash-preview',
+        runs: parseInt((judgeNode && judgeNode.data['judge-runs']) || '2')
+      },
+      generation: {
+        temperature: parseFloat((runnerNode && runnerNode.data.temp) || '0.7')
+      }
+    };
+  }
+
+  // ---- Launch ----
+  async function launchFlow() {
+    if (!flowEditor) return;
+    const config = flowToConfig();
+    if (!config.models.length) { alert('Add at least one Model node with a model ID.'); return; }
+    if (!config.prompts.length) { alert('Add at least one prompt to your Prompt Pack node.'); return; }
+
+    const estEl = document.getElementById('flow-estimate');
+    if (estEl) estEl.textContent = 'Creating run...';
+
+    try {
+      const r1 = await fetch('/api/runs', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name: config.name, config: config, mode: config.mode})
+      });
+      const run = await r1.json();
+      if (r1.ok) {
+        await fetch('/api/runs/' + run.id + '/start', {method:'POST'});
+        currentRunId = run.id;
+        showPage('run');
+        startRunSSE(run.id);
+      } else {
+        if (estEl) estEl.textContent = 'Error: ' + (run.error || 'unknown');
+      }
+    } catch(e) {
+      if (estEl) estEl.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  // ---- AI Flow Chat ----
+  function flowSummary() {
+    if (!flowEditor) return '';
+    try {
+      const exported = flowEditor.export();
+      const nodes = Object.values(exported.drawflow.Home.data);
+      const models = nodes.filter(n=>n.name==='model').map(n=>n.data['model-id']).filter(Boolean);
+      const promptNode = nodes.find(n=>n.name==='prompt');
+      let promptCount = 0;
+      if (promptNode) {
+        try { const arr = JSON.parse(promptNode.data.prompts||'[]'); promptCount = arr.length; } catch(e) {}
+      }
+      const judgeNode = nodes.find(n=>n.name==='judge');
+      const runnerNode = nodes.find(n=>n.name==='runner');
+      return JSON.stringify({
+        models: models,
+        promptCount: promptCount,
+        judgeModel: judgeNode ? judgeNode.data['judge-model'] : null,
+        mode: runnerNode ? runnerNode.data.mode : null,
+        name: runnerNode ? runnerNode.data['bench-name'] : null
+      });
+    } catch(e) { return ''; }
+  }
+
+  async function sendFlowChat() {
+    const inp = document.getElementById('flow-chat-input');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    inp.value = '';
+
+    const msgsEl = document.getElementById('flow-chat-msgs');
+    const userDiv = document.createElement('div');
+    userDiv.className = 'flow-chat-msg user';
+    userDiv.textContent = msg;
+    msgsEl.appendChild(userDiv);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    const thinkDiv = document.createElement('div');
+    thinkDiv.className = 'flow-chat-msg assistant';
+    thinkDiv.textContent = '...';
+    msgsEl.appendChild(thinkDiv);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    flowChatHistory.push({role:'user', content: msg});
+
+    try {
+      const res = await fetch('/api/flow/ai-assist', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({message: msg, currentFlow: flowSummary(), conversation: flowChatHistory.slice(-10)})
+      });
+      const data = await res.json();
+      const reply = data.reply || 'Sorry, something went wrong.';
+      flowChatHistory.push({role:'assistant', content: reply});
+
+      // Try to extract and apply JSON patch
+      const jsonMatch = reply.match(/```json\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        try {
+          const patch = JSON.parse(jsonMatch[1].trim());
+          applyFlowPatch(patch);
+        } catch(e) {}
+      }
+
+      // Render reply: plain text with code blocks
+      thinkDiv.innerHTML = flowRenderReply(reply);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    } catch(e) {
+      thinkDiv.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  function flowRenderReply(text) {
+    // Replace code blocks with <pre>
+    const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return escaped.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+      return '<pre>' + code.trim() + '</pre>';
+    }).replace(/\n/g, '<br>');
+  }
+
+  function applyFlowPatch(patch) {
+    if (!flowEditor) return;
+    const action = patch.action;
+    const data = patch.data || {};
+
+    if (action === 'add_model') {
+      addFlowNode('model', 60 + Math.random()*40, 60 + Math.random()*300, {
+        'model-id': data['model-id'] || '',
+        reasoning: data.reasoning || ''
+      });
+    } else if (action === 'add_prompt') {
+      // Find existing prompt node and add row
+      const exported = flowEditor.export();
+      const nodes = Object.values(exported.drawflow.Home.data);
+      const pNode = nodes.find(n => n.name === 'prompt');
+      if (pNode) {
+        const rowsEl = document.querySelector('#node-' + pNode.id + ' .prompt-rows');
+        if (rowsEl) { flowAddPromptRowText(rowsEl, data.text || ''); flowSyncPrompts(pNode.id); }
+      } else {
+        addFlowNode('prompt', 60, 400, {prompts: JSON.stringify([data.text || ''])});
+      }
+    } else if (action === 'set_judge') {
+      const exported = flowEditor.export();
+      const nodes = Object.values(exported.drawflow.Home.data);
+      const jNode = nodes.find(n => n.name === 'judge');
+      if (jNode) {
+        if (data['judge-model']) {
+          const el = document.querySelector('#node-' + jNode.id + ' [df-judge-model]');
+          if (el) { el.value = data['judge-model']; jNode.data['judge-model'] = data['judge-model']; }
+        }
+        if (data['judge-runs']) {
+          const el = document.querySelector('#node-' + jNode.id + ' [df-judge-runs]');
+          if (el) { el.value = data['judge-runs']; jNode.data['judge-runs'] = String(data['judge-runs']); }
+        }
+      }
+    } else if (action === 'set_mode') {
+      const exported = flowEditor.export();
+      const nodes = Object.values(exported.drawflow.Home.data);
+      const rNode = nodes.find(n => n.name === 'runner');
+      if (rNode && data.mode) {
+        const el = document.querySelector('#node-' + rNode.id + ' [df-mode]');
+        if (el) { el.value = data.mode; rNode.data.mode = data.mode; }
+      }
+    } else if (action === 'set_name') {
+      const exported = flowEditor.export();
+      const nodes = Object.values(exported.drawflow.Home.data);
+      const rNode = nodes.find(n => n.name === 'runner');
+      if (rNode && data.name) {
+        const el = document.querySelector('#node-' + rNode.id + ' [df-bench-name]');
+        if (el) { el.value = data.name; rNode.data['bench-name'] = data.name; }
+      }
+    } else if (action === 'clear') {
+      clearFlow();
+    } else if (action === 'load_preset') {
+      loadFlowPreset(data.name);
+    }
+  }
+
 </script>
 </body>
 </html>

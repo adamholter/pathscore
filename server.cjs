@@ -78,10 +78,29 @@ db.exec(`CREATE TABLE IF NOT EXISTS iteration_comparisons (
   created_at INTEGER NOT NULL, completed_at INTEGER
 )`);
 
+db.exec(`CREATE TABLE IF NOT EXISTS extensions (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  hook_type TEXT NOT NULL,
+  mode_id TEXT,
+  mode_label TEXT,
+  mode_icon TEXT,
+  mode_desc TEXT,
+  fn_body TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  is_builtin INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`);
+
 // Add human_winner/human_feedback columns to comparisons (migration)
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_winner TEXT'); } catch(e) {}
 try { db.exec('ALTER TABLE comparisons ADD COLUMN human_feedback TEXT'); } catch(e) {}
 try { db.exec("ALTER TABLE runs ADD COLUMN mode TEXT DEFAULT 'standard'"); } catch(e) {}
+
+// Extension registry — populated after helpers are defined
+let extensionRegistry = { provider: null, judge: null, mode: {}, results: [] };
 
 // On startup: any rows still in 'generating' or 'judging' status are zombies from a crashed run.
 // Mark them as errors so their run can be viewed and the counts resolve correctly.
@@ -300,7 +319,9 @@ async function generateOneSVG(runId, modelId, prompt, config, reasoningEffort, s
     };
     if (reasoningEffort) body.reasoning = { effort: reasoningEffort };
 
-    const result = await orStream('/chat/completions', body, () => {}, combinedSignal);
+    const result = extensionRegistry.provider
+      ? await extensionRegistry.provider(modelId, messages, config)
+      : await orStream('/chat/completions', body, () => {}, combinedSignal);
     clearTimeout(timeoutId);
     const svg = extractSVG(result.content) || result.content.trim();
     const elapsed = Date.now() - t0;
@@ -330,32 +351,38 @@ async function judgeOnePair(runId, genA, genB, judgeModel, judgeRun, signal, ext
   emit(runId, 'comparison_start', { cmpId, promptId: genA.prompt_id, promptText: genA.prompt_text, modelA: genA.model_id, modelB: genB.model_id });
 
   try {
-    const pngA = svgToPngDataUrl(genA.svg_content);
-    const pngB = svgToPngDataUrl(genB.svg_content);
-
-    const promptContext = extraContext || `You are evaluating two SVG images for the prompt: "${genA.prompt_text}"`;
-
-    const result = await orFetch('/chat/completions', {
-      model: judgeModel,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: `${promptContext}\n\nModel A:` },
-          { type: 'image_url', image_url: { url: pngA } },
-          { type: 'text', text: 'Model B:' },
-          { type: 'image_url', image_url: { url: pngB } },
-          { type: 'text', text: `Which better follows the prompt and has better visual quality?\n\nRespond with ONLY this JSON (no markdown):\n{"thought_process":"brief analysis","winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"improvement suggestion"}` },
-        ],
-      }],
-      temperature: 0.1,
-    });
-
-    const content = result.choices?.[0]?.message?.content || '';
     let parsed = {};
-    try {
-      const m = content.match(/\{[\s\S]*\}/);
-      if (m) parsed = JSON.parse(m[0]);
-    } catch (_) {}
+    if (extensionRegistry.judge) {
+      parsed = await extensionRegistry.judge(genA, genB,
+        { id: genA.prompt_id, text: genA.prompt_text }, { judge: { model: judgeModel } },
+        { svgToPngDataUrl, orFetch, orStream });
+    } else {
+      const pngA = svgToPngDataUrl(genA.svg_content);
+      const pngB = svgToPngDataUrl(genB.svg_content);
+
+      const promptContext = extraContext || `You are evaluating two SVG images for the prompt: "${genA.prompt_text}"`;
+
+      const result = await orFetch('/chat/completions', {
+        model: judgeModel,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: `${promptContext}\n\nModel A:` },
+            { type: 'image_url', image_url: { url: pngA } },
+            { type: 'text', text: 'Model B:' },
+            { type: 'image_url', image_url: { url: pngB } },
+            { type: 'text', text: `Which better follows the prompt and has better visual quality?\n\nRespond with ONLY this JSON (no markdown):\n{"thought_process":"brief analysis","winner":"A" or "B" or "tie","model_a_score":0-10,"model_b_score":0-10,"feedback":"improvement suggestion"}` },
+          ],
+        }],
+        temperature: 0.1,
+      });
+
+      const content = result.choices?.[0]?.message?.content || '';
+      try {
+        const m = content.match(/\{[\s\S]*\}/);
+        if (m) parsed = JSON.parse(m[0]);
+      } catch (_) {}
+    }
 
     const winner = ['A', 'B', 'tie'].includes(parsed.winner) ? parsed.winner : null;
     db.prepare(`UPDATE comparisons SET winner=?, model_a_score=?, model_b_score=?, thought_process=?, feedback=?, status='complete', completed_at=? WHERE id=?`)
@@ -788,12 +815,16 @@ async function runBenchmark(runId) {
 
   try {
     let result;
-    switch (mode) {
-      case 'feedback_iteration': result = await runFeedbackIteration(runId, config, abortCtrl); break;
-      case 'image_to_svg': result = await runImageToSVG(runId, config, abortCtrl); break;
-      case 'svg_editing': result = await runSVGEditing(runId, config, abortCtrl); break;
-      case 'human_eval': result = await runHumanEval(runId, config, abortCtrl); break;
-      default: result = await runStandard(runId, config, abortCtrl); break;
+    if (extensionRegistry.mode[mode]) {
+      result = await extensionRegistry.mode[mode](runId, config, { ...extensionHelpers, abortCtrl });
+    } else {
+      switch (mode) {
+        case 'feedback_iteration': result = await runFeedbackIteration(runId, config, abortCtrl); break;
+        case 'image_to_svg': result = await runImageToSVG(runId, config, abortCtrl); break;
+        case 'svg_editing': result = await runSVGEditing(runId, config, abortCtrl); break;
+        case 'human_eval': result = await runHumanEval(runId, config, abortCtrl); break;
+        default: result = await runStandard(runId, config, abortCtrl); break;
+      }
     }
 
     if (result === 'stopped') {
@@ -977,7 +1008,12 @@ app.get('/api/runs/:id/results', (req, res) => {
     })).sort((a,b) => b.elo - a.elo);
   }
 
-  res.json({ run: { ...run, config }, leaderboard, heatmap, models: modelIds, generations: gens, comparisons: cmps, iterations: iters, iterationComparisons: iterCmps, iterLeaderboard });
+  const extensionScores = {};
+  for (const { fn, name } of extensionRegistry.results) {
+    try { extensionScores[name] = fn(cmps, modelIds, { elo, stats }); } catch(e) {}
+  }
+
+  res.json({ run: { ...run, config }, leaderboard, heatmap, models: modelIds, generations: gens, comparisons: cmps, iterations: iters, iterationComparisons: iterCmps, iterLeaderboard, extensionScores });
 });
 
 // Human eval routes
@@ -1106,5 +1142,235 @@ app.get('/api/default-prompts', (_, res) => res.json([
   { id: uuidv4(), text: 'a simple analog clock face showing 3 oclock', category: 'illustration' },
   { id: uuidv4(), text: 'the Google logo colors arranged as a pie chart', category: 'data-visualization' },
 ]));
+
+
+// ── Extension System ─────────────────────────────────────────────────────────
+
+const extensionHelpers = {
+  generateOneSVG, judgeOnePair, runParallelGenAndJudge,
+  emit, db, uuidv4, svgToPngDataUrl, orFetch, orStream, extractSVG,
+};
+
+function rebuildExtensionRegistry() {
+  const exts = db.prepare('SELECT * FROM extensions WHERE enabled=1').all();
+  extensionRegistry = { provider: null, judge: null, mode: {}, results: [] };
+  for (const ext of exts) {
+    try {
+      const hookFn = (new Function('helpers', ext.fn_body))(extensionHelpers);
+      if (ext.hook_type === 'provider') extensionRegistry.provider = hookFn;
+      else if (ext.hook_type === 'judge') extensionRegistry.judge = hookFn;
+      else if (ext.hook_type === 'mode' && ext.mode_id) extensionRegistry.mode[ext.mode_id] = hookFn;
+      else if (ext.hook_type === 'results') extensionRegistry.results.push({ fn: hookFn, name: ext.name });
+    } catch(e) { console.warn('[ext] ' + ext.name + ': ' + e.message); }
+  }
+}
+
+const BUILTIN_EXTENSIONS = [
+  {
+    id: 'builtin-multi-judge-consensus',
+    name: 'Multi-judge Consensus',
+    description: 'Runs 3 vision models and takes majority vote. More reliable but slower.',
+    hook_type: 'judge',
+    mode_id: null, mode_label: null, mode_icon: null, mode_desc: null,
+    fn_body: "return async function(genA, genB, prompt, config, helpers) {\n  const judges = config.extension_consensus_judges || ['google/gemini-flash-1.5-8b','openai/gpt-4o-mini','anthropic/claude-haiku-3'];\n  const votes = { A: 0, B: 0, tie: 0 };\n  const results = [];\n  for (const judgeModel of judges) {\n    try {\n      const pngA = helpers.svgToPngDataUrl(genA.svg_content);\n      const pngB = helpers.svgToPngDataUrl(genB.svg_content);\n      const result = await helpers.orFetch('/chat/completions', {\n        model: judgeModel,\n        messages: [{ role: 'user', content: [\n          { type: 'text', text: 'Evaluate two SVGs for prompt: \"' + prompt.text + '\"\\nModel A:' },\n          { type: 'image_url', image_url: { url: pngA } },\n          { type: 'text', text: 'Model B:' },\n          { type: 'image_url', image_url: { url: pngB } },\n          { type: 'text', text: 'Which is better? Respond ONLY with JSON: {\"winner\":\"A\" or \"B\" or \"tie\",\"model_a_score\":0-10,\"model_b_score\":0-10}' }\n        ]}],\n        temperature: 0.1,\n      });\n      const content = result.choices?.[0]?.message?.content || '';\n      const m = content.match(/\\{[\\s\\S]*\\}/);\n      if (m) {\n        const p = JSON.parse(m[0]);\n        if (['A','B','tie'].includes(p.winner)) {\n          votes[p.winner]++;\n          results.push({ judge: judgeModel, winner: p.winner, scoreA: p.model_a_score, scoreB: p.model_b_score });\n        }\n      }\n    } catch(e) {}\n  }\n  const winner = votes.A > votes.B && votes.A >= votes.tie ? 'A' : votes.B > votes.A && votes.B >= votes.tie ? 'B' : 'tie';\n  const avgA = results.reduce((s,r) => s + (r.scoreA||5), 0) / Math.max(results.length, 1);\n  const avgB = results.reduce((s,r) => s + (r.scoreB||5), 0) / Math.max(results.length, 1);\n  return {\n    winner,\n    model_a_score: +avgA.toFixed(1),\n    model_b_score: +avgB.toFixed(1),\n    thought_process: 'Votes: A=' + votes.A + ' B=' + votes.B + ' tie=' + votes.tie + ' | ' + results.map(r => r.judge.split('/').pop() + '->' + r.winner).join(', '),\n    feedback: 'Multi-judge consensus (' + results.length + ' judges)'\n  };\n};",
+  },
+  {
+    id: 'builtin-scoring-rubric',
+    name: 'Scoring Rubric Judge',
+    description: 'Weighted criteria: Prompt Accuracy 40%, Visual Quality 30%, Technical Correctness 20%, Aesthetics 10%.',
+    hook_type: 'judge',
+    mode_id: null, mode_label: null, mode_icon: null, mode_desc: null,
+    fn_body: "return async function(genA, genB, prompt, config, helpers) {\n  const criteria = config.extension_rubric_criteria || [\n    { name: 'Prompt Accuracy', weight: 0.4 },\n    { name: 'Visual Quality', weight: 0.3 },\n    { name: 'Technical Correctness', weight: 0.2 },\n    { name: 'Aesthetics', weight: 0.1 }\n  ];\n  const judgeModel = config.judge && config.judge.model ? config.judge.model : 'google/gemini-flash-1.5';\n  const pngA = helpers.svgToPngDataUrl(genA.svg_content);\n  const pngB = helpers.svgToPngDataUrl(genB.svg_content);\n  const criteriaList = criteria.map(c => c.name + ' (' + Math.round(c.weight*100) + '%)').join(', ');\n  const criteriaKeys = criteria.map(c => '\"' + c.name + '\":{\"scoreA\":0-10,\"scoreB\":0-10}').join(',');\n  const result = await helpers.orFetch('/chat/completions', {\n    model: judgeModel,\n    messages: [{ role: 'user', content: [\n      { type: 'text', text: 'Rate SVGs for prompt: \"' + prompt.text + '\"\\nCriteria: ' + criteriaList + '\\nModel A:' },\n      { type: 'image_url', image_url: { url: pngA } },\n      { type: 'text', text: 'Model B:' },\n      { type: 'image_url', image_url: { url: pngB } },\n      { type: 'text', text: 'Score each criterion 0-10 for both. Respond ONLY with JSON: {\"criteria\":{' + criteriaKeys + '},\"feedback\":\"...\"}' }\n    ]}],\n    temperature: 0.1,\n  });\n  const content = result.choices?.[0]?.message?.content || '';\n  const m = content.match(/\\{[\\s\\S]*\\}/);\n  let parsed = {};\n  try { if (m) parsed = JSON.parse(m[0]); } catch(e) {}\n  let totalA = 0, totalB = 0;\n  const breakdown = [];\n  for (const c of criteria) {\n    const scores = parsed.criteria && parsed.criteria[c.name] ? parsed.criteria[c.name] : {};\n    const sA = scores.scoreA != null ? scores.scoreA : 5;\n    const sB = scores.scoreB != null ? scores.scoreB : 5;\n    totalA += sA * c.weight;\n    totalB += sB * c.weight;\n    breakdown.push(c.name + ': A=' + sA + ' B=' + sB);\n  }\n  const winner = totalA > totalB + 0.3 ? 'A' : totalB > totalA + 0.3 ? 'B' : 'tie';\n  return {\n    winner,\n    model_a_score: +totalA.toFixed(1),\n    model_b_score: +totalB.toFixed(1),\n    thought_process: 'Rubric: ' + breakdown.join(' | '),\n    feedback: parsed.feedback || 'Rubric evaluation complete'\n  };\n};",
+  },
+  {
+    id: 'builtin-custom-http-provider',
+    name: 'Custom HTTP Provider',
+    description: 'Calls any OpenAI-compatible API (Ollama, LM Studio, local). Set extension_provider_url in config.',
+    hook_type: 'provider',
+    mode_id: null, mode_label: null, mode_icon: null, mode_desc: null,
+    fn_body: "return async function(modelId, messages, config) {\n  const baseUrl = (config.extension_provider_url || 'http://localhost:11434/v1').replace(/\\/$/, '');\n  const apiKey = config.extension_provider_key || 'ollama';\n  const fetch = await import('node-fetch').then(m => m.default);\n  const res = await fetch(baseUrl + '/chat/completions', {\n    method: 'POST',\n    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },\n    body: JSON.stringify({ model: modelId, messages, stream: false }),\n  });\n  const json = await res.json();\n  if (!res.ok) throw new Error((json && json.error && json.error.message) || 'HTTP ' + res.status);\n  const content = (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content) || '';\n  return {\n    content,\n    usage: { prompt_tokens: (json.usage && json.usage.prompt_tokens) || 0, completion_tokens: (json.usage && json.usage.completion_tokens) || 0 }\n  };\n};",
+  },
+  {
+    id: 'builtin-ranking-judge',
+    name: 'Ranking Judge',
+    description: 'Judge ranks all N outputs per prompt at once. Synthesizes pairwise comparisons from ranking order.',
+    hook_type: 'mode',
+    mode_id: 'ranking_judge', mode_label: 'Ranking Judge', mode_icon: '\u{1f3c6}', mode_desc: 'Rank all outputs at once per prompt',
+    fn_body: "return async function(runId, config, helpers) {\n  const models = config.models;\n  const prompts = config.prompts;\n  const judge = config.judge;\n  const judgeModel = (judge && judge.model) ? judge.model : 'google/gemini-flash-1.5';\n  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';\n\n  const genPromises = [];\n  for (const model of models) {\n    for (const prompt of prompts) {\n      genPromises.push(helpers.generateOneSVG(runId, model.id || model, prompt, config, model.reasoning_effort || null, helpers.abortCtrl.signal));\n    }\n  }\n  await Promise.allSettled(genPromises);\n  if (helpers.abortCtrl.signal.aborted) return 'stopped';\n\n  const gens = helpers.db.prepare(\"SELECT * FROM generations WHERE run_id=? AND status='complete'\").all(runId);\n  const byPrompt = {};\n  for (const g of gens) {\n    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];\n    byPrompt[g.prompt_id].push(g);\n  }\n\n  for (const promptId of Object.keys(byPrompt)) {\n    const pg = byPrompt[promptId];\n    if (pg.length < 2) continue;\n    try {\n      const contentParts = [{ type: 'text', text: 'Rank these ' + pg.length + ' SVGs for prompt: \"' + pg[0].prompt_text + '\" best to worst.\\n' }];\n      for (let i = 0; i < pg.length; i++) {\n        contentParts.push({ type: 'text', text: 'Image ' + letters[i] + ':' });\n        contentParts.push({ type: 'image_url', image_url: { url: helpers.svgToPngDataUrl(pg[i].svg_content) } });\n      }\n      const letterList = '\"' + letters.slice(0,pg.length).split('').join('\",\"') + '\"';\n      contentParts.push({ type: 'text', text: 'Respond ONLY with JSON: {\"ranking\":[' + letterList + '],\"feedback\":\"brief notes\"}\\nList from best to worst.' });\n\n      const result = await helpers.orFetch('/chat/completions', {\n        model: judgeModel,\n        messages: [{ role: 'user', content: contentParts }],\n        temperature: 0.1,\n      });\n      const content = (result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) || '';\n      const m = content.match(/\\{[\\s\\S]*\\}/);\n      let parsed = {};\n      try { if (m) parsed = JSON.parse(m[0]); } catch(e) {}\n\n      const ranking = Array.isArray(parsed.ranking) ? parsed.ranking : letters.slice(0,pg.length).split('');\n      for (let i = 0; i < pg.length; i++) {\n        for (let j = i + 1; j < pg.length; j++) {\n          const posA = ranking.indexOf(letters[i]);\n          const posB = ranking.indexOf(letters[j]);\n          const ga = pg[i], gb = pg[j];\n          const winner = posA < posB ? 'A' : posA > posB ? 'B' : 'tie';\n          const cmpId = helpers.uuidv4();\n          helpers.db.prepare(\"INSERT INTO comparisons (id,run_id,prompt_id,prompt_text,model_a_id,model_b_id,generation_a_id,generation_b_id,judge_model,judge_run,winner,model_a_score,model_b_score,thought_process,feedback,status,created_at,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'complete',?,?)\").run(\n            cmpId, runId, promptId, pg[0].prompt_text,\n            ga.model_id, gb.model_id, ga.id, gb.id,\n            judgeModel + ' (ranking)', 1, winner,\n            pg.length - (posA >= 0 ? posA : pg.length), pg.length - (posB >= 0 ? posB : pg.length),\n            'Ranking: ' + ranking.join('>'), parsed.feedback || '',\n            Date.now(), Date.now()\n          );\n        }\n      }\n    } catch(e) { console.warn('[ranking_judge]', e.message); }\n  }\n  return 'complete';\n};",
+  },
+  {
+    id: 'builtin-code-generation',
+    name: 'Code Generation',
+    description: 'Generates code instead of SVG. Uses text-only judge. Set extension_code_lang in config (default: JavaScript).',
+    hook_type: 'mode',
+    mode_id: 'code_generation', mode_label: 'Code Generation', mode_icon: '\u{1f4bb}', mode_desc: 'Generate & judge code instead of SVG',
+    fn_body: "return async function(runId, config, helpers) {\n  const models = config.models;\n  const prompts = config.prompts;\n  const judge = config.judge;\n  const lang = config.extension_code_lang || 'JavaScript';\n  const judgeModel = (judge && judge.model) ? judge.model : 'google/gemini-flash-1.5';\n\n  const genPromises = [];\n  for (const model of models) {\n    for (const prompt of prompts) {\n      const extraMessages = [\n        { role: 'system', content: 'You are an expert ' + lang + ' developer. Generate clean, working code. Respond with ONLY the code, no explanation.' },\n        { role: 'user', content: 'Write ' + lang + ' code for: ' + prompt.text + '\\n\\nOutput ONLY the code.' }\n      ];\n      genPromises.push(helpers.generateOneSVG(runId, model.id || model, prompt, config, model.reasoning_effort || null, helpers.abortCtrl.signal, extraMessages));\n    }\n  }\n  await Promise.allSettled(genPromises);\n  if (helpers.abortCtrl.signal.aborted) return 'stopped';\n\n  const gens = helpers.db.prepare(\"SELECT * FROM generations WHERE run_id=? AND status='complete'\").all(runId);\n  const byPrompt = {};\n  for (const g of gens) {\n    if (!byPrompt[g.prompt_id]) byPrompt[g.prompt_id] = [];\n    byPrompt[g.prompt_id].push(g);\n  }\n\n  const cmpPromises = [];\n  for (const key of Object.keys(byPrompt)) {\n    const pg = byPrompt[key];\n    for (let i = 0; i < pg.length; i++) {\n      for (let j = i + 1; j < pg.length; j++) {\n        const tmp = Math.random() < 0.5 ? [pg[i], pg[j]] : [pg[j], pg[i]];\n        const ga = tmp[0], gb = tmp[1];\n        cmpPromises.push((async () => {\n          const cmpId = helpers.uuidv4();\n          helpers.db.prepare(\"INSERT INTO comparisons (id,run_id,prompt_id,prompt_text,model_a_id,model_b_id,generation_a_id,generation_b_id,judge_model,judge_run,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,'judging',?)\").run(\n            cmpId, runId, ga.prompt_id, ga.prompt_text, ga.model_id, gb.model_id, ga.id, gb.id, judgeModel, 1, Date.now());\n          try {\n            const codeA = (ga.svg_content || '').slice(0, 3000);\n            const codeB = (gb.svg_content || '').slice(0, 3000);\n            const promptText = 'Compare these ' + lang + ' solutions for: \"' + ga.prompt_text + '\"\\n\\nCode A:\\n' + codeA + '\\n\\nCode B:\\n' + codeB + '\\n\\nWhich is better? Respond ONLY with JSON: {\"thought_process\":\"analysis\",\"winner\":\"A\" or \"B\" or \"tie\",\"model_a_score\":0-10,\"model_b_score\":0-10,\"feedback\":\"notes\"}';\n            const result = await helpers.orFetch('/chat/completions', {\n              model: judgeModel,\n              messages: [{ role: 'user', content: promptText }],\n              temperature: 0.1,\n            });\n            const content = (result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) || '';\n            const m = content.match(/\\{[\\s\\S]*\\}/);\n            let parsed = {};\n            try { if (m) parsed = JSON.parse(m[0]); } catch(e) {}\n            const winner = ['A','B','tie'].includes(parsed.winner) ? parsed.winner : null;\n            helpers.db.prepare(\"UPDATE comparisons SET winner=?,model_a_score=?,model_b_score=?,thought_process=?,feedback=?,status='complete',completed_at=? WHERE id=?\").run(\n              winner, parsed.model_a_score != null ? parsed.model_a_score : null, parsed.model_b_score != null ? parsed.model_b_score : null, parsed.thought_process || null, parsed.feedback || null, Date.now(), cmpId);\n          } catch(e) {\n            helpers.db.prepare(\"UPDATE comparisons SET status='error',error=?,completed_at=? WHERE id=?\").run(e.message, Date.now(), cmpId);\n          }\n        })());\n      }\n    }\n  }\n  await Promise.allSettled(cmpPromises);\n  return helpers.abortCtrl.signal.aborted ? 'stopped' : 'complete';\n};",
+  },
+];
+
+for (const ext of BUILTIN_EXTENSIONS) {
+  db.prepare(`INSERT OR IGNORE INTO extensions (id,name,description,hook_type,mode_id,mode_label,mode_icon,mode_desc,fn_body,enabled,is_builtin,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,0,1,?,?)`).run(
+    ext.id, ext.name, ext.description, ext.hook_type, ext.mode_id, ext.mode_label, ext.mode_icon, ext.mode_desc, ext.fn_body, Date.now(), Date.now()
+  );
+}
+
+rebuildExtensionRegistry();
+
+// ── Extension API Routes ─────────────────────────────────────────────────────
+
+app.get('/api/extensions/modes', (req, res) => {
+  const exts = db.prepare(`SELECT * FROM extensions WHERE hook_type='mode' ORDER BY is_builtin DESC, created_at ASC`).all();
+  res.json(exts);
+});
+
+app.get('/api/extensions', (req, res) => {
+  const exts = db.prepare(`SELECT id,name,description,hook_type,mode_id,mode_label,mode_icon,mode_desc,enabled,is_builtin,created_at,updated_at FROM extensions ORDER BY is_builtin DESC, created_at ASC`).all();
+  res.json(exts);
+});
+
+app.post('/api/extensions', (req, res) => {
+  const { name, description, hook_type, mode_id, mode_label, mode_icon, mode_desc, fn_body } = req.body;
+  if (!name || !hook_type || !fn_body) return res.status(400).json({ error: 'name, hook_type, fn_body required' });
+  const id = uuidv4();
+  db.prepare(`INSERT INTO extensions (id,name,description,hook_type,mode_id,mode_label,mode_icon,mode_desc,fn_body,enabled,is_builtin,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,1,0,?,?)`).run(
+    id, name, description || '', hook_type, mode_id || null, mode_label || null, mode_icon || null, mode_desc || null, fn_body, Date.now(), Date.now()
+  );
+  rebuildExtensionRegistry();
+  res.json({ id });
+});
+
+app.get('/api/extensions/:id', (req, res) => {
+  const ext = db.prepare(`SELECT * FROM extensions WHERE id=?`).get(req.params.id);
+  if (!ext) return res.status(404).json({ error: 'not found' });
+  res.json(ext);
+});
+
+app.put('/api/extensions/:id', (req, res) => {
+  const ext = db.prepare(`SELECT * FROM extensions WHERE id=?`).get(req.params.id);
+  if (!ext) return res.status(404).json({ error: 'not found' });
+  const { name, description, hook_type, mode_id, mode_label, mode_icon, mode_desc, fn_body } = req.body;
+  db.prepare(`UPDATE extensions SET name=COALESCE(?,name), description=COALESCE(?,description), hook_type=COALESCE(?,hook_type), mode_id=?, mode_label=?, mode_icon=?, mode_desc=?, fn_body=COALESCE(?,fn_body), updated_at=? WHERE id=?`).run(
+    name||null, description||null, hook_type||null, mode_id||null, mode_label||null, mode_icon||null, mode_desc||null, fn_body||null, Date.now(), req.params.id
+  );
+  rebuildExtensionRegistry();
+  res.json({ ok: true });
+});
+
+app.delete('/api/extensions/:id', (req, res) => {
+  const ext = db.prepare(`SELECT * FROM extensions WHERE id=?`).get(req.params.id);
+  if (!ext) return res.status(404).json({ error: 'not found' });
+  if (ext.is_builtin) return res.status(400).json({ error: 'Cannot delete built-in extensions' });
+  db.prepare(`DELETE FROM extensions WHERE id=?`).run(req.params.id);
+  rebuildExtensionRegistry();
+  res.json({ ok: true });
+});
+
+app.post('/api/extensions/:id/toggle', (req, res) => {
+  const ext = db.prepare(`SELECT * FROM extensions WHERE id=?`).get(req.params.id);
+  if (!ext) return res.status(404).json({ error: 'not found' });
+  const newEnabled = ext.enabled ? 0 : 1;
+  db.prepare(`UPDATE extensions SET enabled=?, updated_at=? WHERE id=?`).run(newEnabled, Date.now(), req.params.id);
+  rebuildExtensionRegistry();
+  res.json({ enabled: newEnabled });
+});
+
+app.post('/api/extensions/ai-assist', async (req, res) => {
+  const { message, hook_type, conversation } = req.body;
+  if (!message) return res.status(400).json({ error: 'message required' });
+
+  const systemPrompt = `You are an expert PathScore extension builder. Help users write JavaScript extensions for the PathScore SVG benchmark tool.
+
+## Hook Interfaces
+
+### provider hook
+fn_body returns: async function(modelId, messages, config)
+Returns: { content: string, usage: { prompt_tokens, completion_tokens } }
+
+### judge hook
+fn_body returns: async function(genA, genB, prompt, config, helpers)
+helpers: { svgToPngDataUrl, orFetch, orStream }
+Returns: { winner: 'A'|'B'|'tie', model_a_score: 0-10, model_b_score: 0-10, thought_process: string, feedback: string }
+
+### mode hook
+fn_body returns: async function(runId, config, helpers)
+helpers: { generateOneSVG, judgeOnePair, runParallelGenAndJudge, abortCtrl, emit, db, uuidv4, svgToPngDataUrl, orFetch, orStream, extractSVG }
+Returns: 'complete' | 'stopped'
+
+### results hook
+fn_body returns: function(comparisons, models, existing)
+Returns: { scores: {modelId: number}, label: string }
+
+## fn_body Pattern
+Evaluated as: new Function('helpers', fn_body)(helpers)
+Must RETURN the hook function. Example:
+\`\`\`javascript
+return async function(genA, genB, prompt, config, helpers) {
+  return { winner: 'A', model_a_score: 8, model_b_score: 6, thought_process: '...', feedback: '...' };
+};
+\`\`\``;
+
+  const messages = [];
+  if (conversation && Array.isArray(conversation)) {
+    for (const msg of conversation) {
+      if (msg.role && msg.content) messages.push({ role: msg.role, content: msg.content });
+    }
+  }
+  messages.push({ role: 'user', content: message });
+
+  try {
+    const result = await orFetch('/chat/completions', {
+      model: 'anthropic/claude-sonnet-4-6',
+      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+      temperature: 0.3,
+    });
+    const reply = result.choices?.[0]?.message?.content || '';
+    res.json({ reply });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Flow Builder AI assistant
+app.post('/api/flow/ai-assist', async (req, res) => {
+  const { message, currentFlow, conversation = [] } = req.body;
+  const system = `You are an AI assistant helping users build PathScore benchmark flows in a visual node editor.
+The flow has these node types:
+- model: fields: model-id (OpenRouter model string like "anthropic/claude-sonnet-4-5"), reasoning (""|"low"|"high")
+- prompt: fields: prompts (array of prompt text strings)
+- judge: fields: judge-model (model string), judge-runs (number 1-5)
+- runner: fields: mode ("standard"|"feedback_iteration"|"human_eval"|"image_to_svg"), bench-name (string), temp (0-1)
+- results: terminal output node (no fields to configure)
+
+When the user requests a flow change, respond conversationally AND include a JSON action block in a code fence.
+Available actions:
+- add_model: data: {"model-id": "...", "reasoning": "high"}
+- add_prompt: data: {"text": "prompt text here"}
+- set_judge: data: {"judge-model": "...", "judge-runs": 2}
+- set_mode: data: {"mode": "standard"}
+- set_name: data: {"name": "My Benchmark"}
+- clear: clears all nodes
+- load_preset: data: {"name": "quick_showdown"} (names: quick_showdown, full_standard, feedback_loop, human_eval, multi_judge)
+
+Example action block:
+\`\`\`json
+{"action":"add_model","data":{"model-id":"anthropic/claude-sonnet-4-5","reasoning":"high"}}
+\`\`\`
+
+Only include the JSON block when a change is requested. Be concise and helpful. For popular models, suggest their OpenRouter IDs.`;
+
+  const msgs = [
+    { role: 'system', content: system },
+    ...(conversation || []),
+    { role: 'user', content: message + (currentFlow ? '\n\nCurrent flow state: ' + currentFlow : '') }
+  ];
+  try {
+    const result = await orFetch('/chat/completions', {
+      model: 'anthropic/claude-sonnet-4-6',
+      messages: msgs,
+      max_tokens: 1024
+    });
+    res.json({ reply: result.choices[0].message.content });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.listen(PORT, () => console.log(`PathScore running on http://localhost:${PORT}`));
