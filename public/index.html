@@ -336,7 +336,7 @@ table.lb tr:hover td{background:var(--mist);}
 .syntax-err{background:#f8d7da;color:#721c24;display:block;}
 
     /* ===== FLOW BUILDER ===== */
-    .page-flow-fullbleed { display:flex; flex-direction:column; height:calc(100vh - 52px); padding:0; max-width:none; }
+    .page.page-flow-fullbleed.active { display:flex; flex-direction:column; height:calc(100vh - 56px); padding:0; max-width:none; margin:0; }
     .flow-topbar { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:1px solid var(--border); background:#fff; gap:10px; flex-shrink:0; flex-wrap:wrap; }
     .flow-topbar-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .flow-topbar-right { display:flex; align-items:center; gap:8px; }
@@ -2259,58 +2259,22 @@ document.addEventListener('keydown', function(e) {
 // Export
 function exportJSON() { window.open('/api/runs/'+(document.getElementById('export-bar').dataset.runId||currentRunId)+'/export/json','_blank'); }
 function exportHTML() {
-  if(!resultsData) return;
-  const lb=resultsData.leaderboard.map((row,i)=>'<tr><td>'+(i+1)+'</td><td>'+row.model+'</td><td>'+row.elo+'</td><td>'+(row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'--')+'</td><td>'+row.wins+'/'+row.losses+'/'+row.ties+'</td><td>'+(row.avgScore??'--')+'</td></tr>').join('');
-  const models=resultsData.models, hm=resultsData.heatmap;
-  const hmCols=models.map(m=>'<th>'+sm(m)+'</th>').join('');
-  const hmRows=models.map(rm=>'<tr><th>'+sm(rm)+'</th>'+models.map(cm=>{if(rm===cm) return '<td style="background:#f5f5f5;">N/A</td>';const v=hm[rm]?.[cm];if(v==null) return '<td>--</td>';const bg=v>.5?'rgba(232,77,47,'+v+')':'rgba(76,175,74,'+(1-v)+')';return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';}).join('')+'</tr>').join('');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results - '+resultsData.run.name+'</title>'+
-    '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'+
-    '<style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Outfit",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}
-/* ── Extension System ─────────────────────────────────────────── */
-.ext-hook-badge{display:inline-block;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px;}
-.badge-provider{background:#d4edda;color:#155724;}
-.badge-judge{background:#cce5ff;color:#004085;}
-.badge-mode{background:#fff3cd;color:#856404;}
-.badge-results{background:#f8d7da;color:#721c24;}
-.toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0;}
-.toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
-.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:background .2s;}
-.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:transform .2s;}
-.toggle-switch input:checked + .toggle-slider{background:var(--ember);}
-.toggle-switch input:checked + .toggle-slider:before{transform:translateX(16px);}
-.ext-card{border:1.5px solid var(--border);border-radius:6px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;transition:border-color .15s;}
-.ext-card:hover{border-color:var(--stone);}
-.ext-card-body{flex:1;min-width:0;}
-.ext-card-name{font-family:var(--font-h);font-weight:600;font-size:14px;margin-bottom:4px;}
-.ext-card-desc{font-size:12px;color:var(--stone);margin-bottom:8px;line-height:1.5;}
-.ext-card-actions{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.ext-grid{display:flex;flex-direction:column;gap:10px;}
-.ai-chat-wrap{display:flex;flex-direction:column;height:480px;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
-.ai-chat-header{padding:12px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--mist);}
-.ai-chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
-.ai-msg{max-width:80%;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
-.ai-msg-user{background:var(--ink);color:white;align-self:flex-end;border-radius:8px 8px 2px 8px;}
-.ai-msg-assistant{background:var(--mist);color:var(--ink);align-self:flex-start;border-radius:8px 8px 8px 2px;}
-.ai-msg pre{background:#0a0a0a;color:#e8e8e8;border-radius:4px;padding:12px;font-family:var(--font-b);font-size:12px;margin:8px 0;overflow-x:auto;white-space:pre;}
-.ai-msg .use-code-btn{font-size:11px;background:var(--ember);color:white;border:none;border-radius:3px;padding:4px 10px;cursor:pointer;margin-top:4px;}
-.ai-chat-footer{padding:12px;border-top:1.5px solid var(--border);display:flex;gap:8px;}
-.ai-chat-footer textarea{flex:1;font-family:var(--font-b);font-size:13px;padding:8px 12px;border:1.5px solid var(--border);border-radius:4px;resize:none;height:40px;outline:none;}
-.ai-chat-footer textarea:focus{border-color:var(--ink);}
-.ext-code-editor{width:100%;font-family:var(--font-b);font-size:12px;padding:12px;border:1.5px solid var(--border);border-radius:4px;background:#0a0a0a;color:#e8e8e8;height:380px;resize:vertical;outline:none;line-height:1.6;}
-.ext-code-editor:focus{border-color:var(--stone);}
-.syntax-result{font-size:12px;padding:6px 10px;border-radius:3px;margin-top:6px;display:none;}
-.syntax-ok{background:#d4edda;color:#155724;display:block;}
-.syntax-err{background:#f8d7da;color:#721c24;display:block;}
-
-</style></head>'+
-    '<body><h1>'+resultsData.run.name+'</h1><p style="color:#999;margin-bottom:48px">'+models.length+' models · '+resultsData.run.config.prompts.length+' prompts · '+new Date(resultsData.run.created_at).toLocaleDateString()+'</p>'+
-    '<h2>ELO Leaderboard</h2><table><thead><tr><th>#</th><th>Model</th><th>ELO</th><th>Win Rate</th><th>W/L/T</th><th>Avg Score</th></tr></thead><tbody>'+lb+'</tbody></table>'+
-    '<h2>Win Rate Heatmap</h2><table style="width:auto"><thead><tr><th></th>'+hmCols+'</tr></thead><tbody>'+hmRows+'</tbody></table>'+
-    '<p style="font-size:11px;color:#999;margin-top:64px">Generated by PathScore on '+new Date().toLocaleString()+'</p></body></html>';
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-  a.download='pathscore-'+resultsData.run.id.slice(0,8)+'.html';
+  if (!resultsData) return;
+  const lb = resultsData.leaderboard.map((row, i) => '<tr><td>'+(i+1)+'</td><td>'+row.model+'</td><td>'+row.elo+'</td><td>'+(row.total>0?((row.wins+row.ties*.5)/row.total*100).toFixed(0)+'%':'--')+'</td><td>'+row.wins+'/'+row.losses+'/'+row.ties+'</td><td>'+(row.avgScore??'--')+'</td></tr>').join('');
+  const models = resultsData.models;
+  const hm = resultsData.heatmap;
+  const hmCols = models.map(m => '<th>' + sm(m) + '</th>').join('');
+  const hmRows = models.map(rm => '<tr><th>' + sm(rm) + '</th>' + models.map(cm => {
+    if (rm === cm) return '<td style="background:#f5f5f5;">N/A</td>';
+    const v = hm[rm]?.[cm];
+    if (v == null) return '<td>--</td>';
+    const bg = v > .5 ? 'rgba(232,77,47,'+v+')' : 'rgba(76,175,74,'+(1-v)+')';
+    return '<td style="background:'+bg+';color:white;">'+(v*100).toFixed(0)+'%</td>';
+  }).join('') + '</tr>').join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PathScore Results - ${resultsData.run.name}</title><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><style>body{font-family:"IBM Plex Mono",monospace;background:#fff;color:#0a0a0a;padding:48px;max-width:960px;margin:0 auto}h1{font-family:"Outfit",sans-serif;font-weight:800;font-size:32px}h2{font-family:"Outfit",sans-serif;font-weight:700;font-size:20px;margin:40px 0 16px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#999;padding:8px 12px;border-bottom:2px solid #e8e8e8}td{padding:12px;border-bottom:1px solid #e8e8e8;font-size:13px}</style></head><body><h1>${resultsData.run.name}</h1><p style="color:#999;margin-bottom:48px">${models.length} models · ${resultsData.run.config.prompts.length} prompts · ${new Date(resultsData.run.created_at).toLocaleDateString()}</p><h2>ELO Leaderboard</h2><table><thead><tr><th>#</th><th>Model</th><th>ELO</th><th>Win Rate</th><th>W/L/T</th><th>Avg Score</th></tr></thead><tbody>${lb}</tbody></table><h2>Win Rate Heatmap</h2><table style="width:auto"><thead><tr><th></th>${hmCols}</tr></thead><tbody>${hmRows}</tbody></table><p style="font-size:11px;color:#999;margin-top:64px">Generated by PathScore on ${new Date().toLocaleString()}</p></body></html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+  a.download = 'pathscore-' + resultsData.run.id.slice(0,8) + '.html';
   a.click();
 }
 
@@ -2514,8 +2478,7 @@ function renderAiReply(text, hookType) {
   let lastCode = '';
   for (const part of parts) {
     if (part.startsWith('```')) {
-      const code = part.replace(/^```\w*
-?/, '').replace(/```$/, '');
+      const code = part.replace(/^```\w*\n?/, '').replace(/```$/, '');
       hasCode = true;
       lastCode = code;
       html += `<pre>${escHtml(code)}</pre>`;

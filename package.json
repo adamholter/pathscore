@@ -5,7 +5,8 @@
   "main": "server.cjs",
   "scripts": {
     "start": "node server.cjs",
-    "dev": "node server.cjs"
+    "dev": "node server.cjs",
+    "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

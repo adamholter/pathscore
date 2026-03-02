@@ -22,11 +22,21 @@ node server.cjs
 
 Open http://localhost:7642
 
+Run tests:
+
+```bash
+npm test
+```
+
+Backend architecture notes: `BACKEND_ARCHITECTURE.md`
+
 ## Environment variables
 
 ```
 OPENROUTER_API_KEY=sk-or-...
 PORT=7642
+PATHSCORE_EXTENSION_RUNTIME=legacy
+PATHSCORE_INVARIANT_CHECKS=0
 ```
 
 ## Export formats
